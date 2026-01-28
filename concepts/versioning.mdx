@@ -1,0 +1,72 @@
+---
+title: "API Versioning"
+description: "RFQ Protocol API versions"
+---
+
+The RFQ Protocol uses semantic versioning for its API.
+
+## Current Version
+
+| Version | Protocol | Fill Type | Status |
+|---------|----------|-----------|--------|
+| **v1** | REST API | Full fills only | **Live** |
+
+## v1 (Current)
+
+Version 1 is the current production API:
+
+- **REST API** - All endpoints use HTTP/HTTPS
+- **Full fills only** - Orders must be completely filled or they fail
+- Synchronous request/response pattern
+- JSON payloads
+- Standardized error responses with error codes
+- Request ID tracing
+
+### Endpoints
+
+```
+GET  /api/v1/config
+GET  /api/v1/markets
+GET  /api/v1/quote
+POST /api/v1/intent
+GET  /api/v1/health
+```
+
+### Response Format
+
+All v1 responses follow a consistent format:
+
+**Success Response:**
+```json
+{
+  "status": "ok",
+  // endpoint-specific fields at top level
+  "quote_id": "rfq-q-...",
+  "amount_in": "1000000000000000000",
+  "amount_out": "498500000000000000"
+}
+```
+
+**Error Response:**
+```json
+{
+  "status": "error",
+  "error": "Human readable message",
+  "code": "ERROR_CODE",
+  "details": { /* optional validation details */ }
+}
+```
+
+See [Error Codes](/concepts/error-codes) for the complete error reference.
+
+## v2 (Coming Soon)
+
+<Warning>
+  v2 features are in planning and development. The API design is not yet finalized.
+</Warning>
+
+Future features under consideration:
+- **WebSocket streaming** - Real-time price updates
+- **Partial fills** - Large orders filled by multiple solvers
+
+More details will be announced when v2 is ready for preview.

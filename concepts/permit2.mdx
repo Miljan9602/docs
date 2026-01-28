@@ -1,0 +1,42 @@
+---
+title: "Permit2"
+description: "Gasless token approvals via Uniswap's Permit2"
+---
+
+RFQ Protocol uses Uniswap's Permit2 contract for gasless token approvals and transfers.
+
+## Overview
+
+Permit2 enables **signature-based token transfers** instead of requiring on-chain approval transactions for every protocol. Users approve Permit2 once per token, then use off-chain signatures for all subsequent transfers.
+
+## Documentation
+
+For detailed information about Permit2, see the official Uniswap documentation:
+
+<CardGroup cols={2}>
+  <Card title="Permit2 Overview" icon="book" href="https://docs.uniswap.org/contracts/permit2/overview">
+    Official documentation explaining how Permit2 works
+  </Card>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/Uniswap/permit2">
+    Source code and technical specifications
+  </Card>
+</CardGroup>
+
+## Contract Address
+
+The Permit2 contract address for each chain can be retrieved from the `/api/v1/config` endpoint:
+
+```bash
+curl "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+```
+
+## Key Concepts
+
+- **One-time approval**: Approve Permit2 once per token, use it for any Permit2-enabled protocol
+- **Signature-based transfers**: Transfer tokens with just a signature (no gas for the transfer itself)
+- **Deadline enforcement**: Signatures expire at a specified time
+- **Nonce management**: Permit2 uses unordered nonces with bitmap tracking - use random nonces
+
+<Note>
+  Permit2 uses random/unordered nonces, not sequential ones. Generate a random 256-bit nonce for each signature. The probability of collision is negligible (1 in 2^256).
+</Note>

@@ -1,0 +1,321 @@
+---
+title: "Sign Intent"
+api: "POST https://your-solver.example.com/api/v1/intent"
+---
+
+<Note>
+  This endpoint is called by the RFQ Coordinator when a user wants to execute a swap. The solver must sign a reversed intent for atomic settlement.
+</Note>
+
+Signs and returns the maker's (solver's) swap intent for on-chain settlement.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication: `Bearer <auth_key>`
+</ParamField>
+
+## Request Body
+
+<ParamField body="quote_id" type="string" required>
+  The quote ID from the original quote request
+</ParamField>
+
+<ParamField body="chain_id" type="string" required>
+  The blockchain chain ID
+</ParamField>
+
+<ParamField body="user_address" type="string" required>
+  The taker's wallet address
+</ParamField>
+
+<ParamField body="intent" type="object" required>
+  Simplified swap intent with tokens and amounts only
+  <Expandable title="Intent object">
+    <ParamField body="inputToken" type="string" required>Token user is selling</ParamField>
+    <ParamField body="outputToken" type="string" required>Token user is buying</ParamField>
+    <ParamField body="inputAmount" type="string" required>Amount user is selling (wei)</ParamField>
+    <ParamField body="outputAmount" type="string" required>Amount user will receive (wei)</ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success, `"error"` on failure
+</ResponseField>
+
+<ResponseField name="quote_id" type="string">
+  The original quote ID
+</ResponseField>
+
+<ResponseField name="solver_address" type="string">
+  The solver's wallet address
+</ResponseField>
+
+<ResponseField name="signed_swap_intent" type="object">
+  <Expandable title="SignedSwapIntent">
+    <ResponseField name="swap_intent" type="object">
+      The **reversed** maker swap intent
+      <Expandable title="MakerSwapIntent">
+        <ResponseField name="counterparty" type="string">Taker's address</ResponseField>
+        <ResponseField name="inputToken" type="string">Token solver sells (= taker's output)</ResponseField>
+        <ResponseField name="outputToken" type="string">Token solver buys (= taker's input)</ResponseField>
+        <ResponseField name="inputAmount" type="string">Amount solver sells (= taker's output)</ResponseField>
+        <ResponseField name="outputAmount" type="string">Amount solver receives (= taker's input)</ResponseField>
+        <ResponseField name="unwrap" type="boolean">Unwrap WETH flag</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="signature_params" type="object">
+      Solver's Permit2 signature
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL (from RFQ Coordinator)
+curl -X POST "https://solver.example.com/api/v1/intent" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_auth_key" \
+  -d '{
+    "quote_id": "rfq-q-...",
+    "chain_id": "1329",
+    "user_address": "0x...",
+    "intent": {
+      "inputToken": "0x...",
+      "outputToken": "0x...",
+      "inputAmount": "1000000000000000000",
+      "outputAmount": "985000000000000000"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "quote_id": "rfq-q-550e8400-e29b-41d4-a716-446655440000",
+  "solver_address": "0xsolveraddress1234567890abcdef12345678",
+  "signed_swap_intent": {
+    "swap_intent": {
+      "counterparty": "0x1234567890abcdef1234567890abcdef12345678",
+      "inputToken": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "outputToken": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "inputAmount": "498500000000000000",
+      "outputAmount": "1000000000",
+      "unwrap": false
+    },
+    "signature_params": {
+      "deadline": "1705613400",
+      "nonce": "67890",
+      "signer": "0xsolveraddress1234567890abcdef12345678",
+      "signature": "0xsolver_signature..."
+    }
+  }
+}
+```
+
+```json 400 - Validation Error
+{
+  "status": "error",
+  "error": "chain_id: Required, intent.inputAmount: Required",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+
+```json 503 - Service Unavailable
+{
+  "status": "error",
+  "error": "Service unavailable",
+  "code": "INTERNAL_ERROR"
+}
+```
+</ResponseExample>
+
+## Intent Reversal
+
+The solver must **reverse** the taker's intent:
+
+```typescript
+// Input: simplified intent from server
+interface Intent {
+  inputToken: string;
+  outputToken: string;
+  inputAmount: string;
+  outputAmount: string;
+}
+
+function reverseIntent(intent: Intent, takerAddress: string): MakerSwapIntent {
+  return {
+    // IMPORTANT: Set counterparty to prevent front-running
+    counterparty: takerAddress,
+
+    // Swap tokens: maker sells what taker wants to buy
+    inputToken: intent.outputToken,
+    outputToken: intent.inputToken,
+
+    // Swap amounts
+    inputAmount: intent.outputAmount,
+    outputAmount: intent.inputAmount,
+
+    // Solver always sets unwrap to false
+    // The settlement contract uses the user's unwrap preference
+    unwrap: false,
+  };
+}
+```
+
+| Intent Field | Maker Field | Relationship |
+|-------------|-------------|--------------|
+| `inputToken` | `outputToken` | Swapped |
+| `outputToken` | `inputToken` | Swapped |
+| `inputAmount` | `outputAmount` | Swapped |
+| `outputAmount` | `inputAmount` | Swapped |
+| (none) | `counterparty` | Set to taker address |
+| (none) | `unwrap` | Always `false` |
+
+## Signing the Maker Intent
+
+```typescript
+// Get addresses from /api/v1/config or your chain configuration
+const PERMIT2_ADDRESS = chainConfig.permit2_address;
+
+async function signMakerIntent(
+  makerIntent: MakerSwapIntent,
+  deadline: bigint,
+  rfqSettlementAddress: string,
+  chainId: number
+): Promise<{ nonce: string; signature: string }> {
+  const nonce = randomNonce(); // Use random 256-bit nonce
+
+  const signature = await walletClient.signTypedData({
+    domain: {
+      name: "Permit2",
+      chainId: chainId,
+      verifyingContract: PERMIT2_ADDRESS,
+    },
+    types: {
+      PermitWitnessTransferFrom: [
+        { name: "permitted", type: "TokenPermissions" },
+        { name: "spender", type: "address" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+        { name: "witness", type: "MakerSwapIntent" },
+      ],
+      TokenPermissions: [
+        { name: "token", type: "address" },
+        { name: "amount", type: "uint256" },
+      ],
+      MakerSwapIntent: [
+        { name: "counterparty", type: "address" },
+        { name: "inputToken", type: "address" },
+        { name: "outputToken", type: "address" },
+        { name: "inputAmount", type: "uint256" },
+        { name: "outputAmount", type: "uint256" },
+        { name: "unwrap", type: "bool" },
+      ],
+    },
+    primaryType: "PermitWitnessTransferFrom",
+    message: {
+      permitted: {
+        token: makerIntent.inputToken,
+        amount: BigInt(makerIntent.inputAmount),
+      },
+      spender: rfqSettlementAddress,
+      nonce,
+      deadline,
+      witness: makerIntent,
+    },
+  });
+
+  return { nonce: nonce.toString(), signature };
+}
+```
+
+## Security Considerations
+
+<Warning>
+  **Always set `counterparty`** to the taker's address. Setting it to zero address (`0x0...0`) exposes the trade to front-running attacks where an attacker could intercept and fill the order themselves.
+</Warning>
+
+<AccordionGroup>
+  <Accordion title="Validate Quote ID">
+    Verify the `quote_id` matches a quote you previously issued and hasn't expired.
+  </Accordion>
+
+  <Accordion title="Check Amounts">
+    Confirm the intent amounts match what you quoted. Reject if they differ.
+  </Accordion>
+
+  <Accordion title="Verify Balance">
+    Ensure you have sufficient balance of the output token before signing.
+  </Accordion>
+
+  <Accordion title="Use Short Deadlines">
+    The solver calculates its own deadline (e.g., 60 seconds from signing). This limits how long your signature is valid.
+  </Accordion>
+</AccordionGroup>
+
+## Complete Implementation
+
+```typescript
+import { successResponse, errorResponse, ErrorCodes } from "rfq-api";
+
+app.post("/api/v1/intent", async (req, res) => {
+  const { quote_id, chain_id, user_address, intent } = req.body;
+
+  // 1. Get chain config (RFQ settlement address is configured per-chain)
+  const chainConfig = getChainConfig(chain_id);
+
+  // 2. Validate quote exists and isn't expired
+  const quote = await getQuote(quote_id);
+  if (!quote || Date.now() > quote.expiry) {
+    return res.status(400).json(
+      errorResponse("Quote not found or expired", ErrorCodes.QUOTE_EXPIRED)
+    );
+  }
+
+  // 3. Verify amounts match
+  if (
+    intent.inputAmount !== quote.amount_in ||
+    intent.outputAmount !== quote.amount_out
+  ) {
+    return res.status(400).json(
+      errorResponse("Intent amounts do not match quote", ErrorCodes.QUOTE_AMOUNT_MISMATCH)
+    );
+  }
+
+  // 4. Reverse the intent
+  const makerIntent = reverseIntent(intent, user_address);
+
+  // 5. Sign with solver's key (calculate own deadline)
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 60); // 60 seconds
+  const { nonce, signature } = await signMakerIntent(
+    makerIntent,
+    deadline,
+    chainConfig.rfqSettlementAddress // From chain config
+  );
+
+  // 6. Return signed intent
+  res.json(
+    successResponse({
+      quote_id,
+      solver_address: SOLVER_ADDRESS,
+      signed_swap_intent: {
+        swap_intent: makerIntent,
+        signature_params: {
+          deadline: deadline.toString(),
+          nonce,
+          signer: SOLVER_ADDRESS,
+          signature,
+        },
+      },
+    })
+  );
+});
+```
+
+<Note>
+  The RFQ settlement address and Permit2 address are configured per-chain in the solver's environment. See [Environment Variables](#) for configuration details.
+</Note>

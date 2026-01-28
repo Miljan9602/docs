@@ -1,0 +1,116 @@
+---
+title: "Get Markets"
+api: "POST https://your-solver.example.com/api/v1/markets"
+---
+
+<Note>
+  This endpoint is called by the RFQ Coordinator to query which markets a solver supports. Solvers must implement this endpoint.
+</Note>
+
+Returns the list of trading pairs this solver provides liquidity for.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication: `Bearer <auth_key>`
+</ParamField>
+
+## Request Body
+
+<ParamField body="chain_id" type="string" required>
+  The blockchain chain ID for a supported network
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success, `"error"` on failure
+</ResponseField>
+
+<ResponseField name="markets" type="array">
+  List of supported trading pairs
+  <Expandable title="Market object">
+    <ResponseField name="input_token" type="string">
+      The input token address (0x-prefixed)
+    </ResponseField>
+    <ResponseField name="output_token" type="string">
+      The output token address (0x-prefixed)
+    </ResponseField>
+    <ResponseField name="min_size" type="number">
+      Minimum trade size in USD
+    </ResponseField>
+    <ResponseField name="max_size" type="number">
+      Maximum trade size in USD
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL (from RFQ Coordinator)
+curl -X POST "https://solver.example.com/api/v1/markets" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_auth_key" \
+  -d '{"chain_id": "<CHAIN_ID>"}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "markets": [
+    {
+      "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "min_size": 100.00,
+      "max_size": 10000.00
+    },
+    {
+      "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "output_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "min_size": 100.00,
+      "max_size": 10000.00
+    }
+  ]
+}
+```
+
+```json 400 - Validation Error
+{
+  "status": "error",
+  "error": "chain_id: Required",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+</ResponseExample>
+
+## Implementation Example
+
+```typescript
+import { successResponse, errorResponse, ErrorCodes } from "rfq-api";
+
+app.post("/api/v1/markets", (req, res) => {
+  const { chain_id } = req.body;
+
+  // Return supported markets
+  res.json(
+    successResponse({
+      markets: [
+        {
+          input_token: "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+          output_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+          min_size: 100.0,
+          max_size: 10000.0,
+        },
+      ],
+    })
+  );
+});
+```
+
+## Notes
+
+- Return both directions of a pair if you support bidirectional trading
+- `min_size` and `max_size` are in USD value
+- The RFQ Coordinator caches these results - consider refreshing periodically
+- Authenticate requests using the shared auth key

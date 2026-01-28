@@ -1,0 +1,215 @@
+---
+title: "Integrate as a Solver"
+description: "Guide to becoming an RFQ Protocol market maker"
+---
+
+This guide explains how to set up a solver (market maker) that provides liquidity to the RFQ Protocol.
+
+## Overview
+
+As a solver, you will:
+1. Receive quote requests from the RFQ Coordinator
+2. Return competitive prices based on your pricing strategy
+3. Sign swap intents when users want to execute trades
+4. Have your tokens transferred atomically via Permit2
+
+## Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="Solver Wallet" icon="wallet">
+    EOA with sufficient token balances for trading
+  </Card>
+  <Card title="HTTPS Endpoint" icon="server">
+    Publicly accessible API endpoint for receiving requests
+  </Card>
+  <Card title="Price Feed" icon="chart-line">
+    Access to real-time price data for your supported markets
+  </Card>
+  <Card title="Permit2 Approval" icon="check">
+    Approve Permit2 contract to spend your tokens
+  </Card>
+</CardGroup>
+
+## Registration
+
+Contact the RFQ Protocol team to register your solver. You'll need to provide:
+
+| Information | Description |
+|-------------|-------------|
+| Solver Name | Human-readable identifier |
+| API Endpoint | Your HTTPS URL (e.g., `https://solver.example.com`) |
+| Supported Markets | Token pairs you'll provide liquidity for |
+| Auth Key | Shared secret for request authentication |
+
+<Note>
+  Registration is currently manual. Contact the protocol team to get whitelisted.
+</Note>
+
+## Required Endpoints
+
+Your solver must implement these endpoints:
+
+### POST /api/v1/markets
+
+Returns the markets you support. See [API Reference](/solver/api/post-markets).
+
+### POST /api/v1/quote
+
+Returns a price quote for the requested trade.
+
+**Request:**
+```json
+{
+  "input_token": "0x...",
+  "output_token": "0x...",
+  "amount": "1000000000",
+  "chain_id": "...",
+  "expiry_timestamp": 1705612830000
+}
+```
+
+**Key fields:**
+- `expiry_timestamp`: Coordinator-provided timestamp - use this for your `expiry` in the response
+
+See [API Reference](/solver/api/post-quote) for full details.
+
+### POST /api/v1/intent
+
+Signs the maker's reversed intent for settlement.
+
+**Request:**
+```json
+{
+  "quote_id": "rfq-q-...",
+  "chain_id": "...",
+  "user_address": "0x...",
+  "intent": {
+    "swap_intent": {
+      "inputToken": "0x...",
+      "outputToken": "0x...",
+      "inputAmount": "...",
+      "outputAmount": "...",
+      "unwrap": false,
+      "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "signature_params": {
+      "deadline": "...",
+      "nonce": "...",
+      "signer": "0x...",
+      "signature": "0x..."
+    }
+  }
+}
+```
+
+See [API Reference](/solver/api/post-intent) for full details.
+
+## Intent Reversal
+
+When you receive an intent request, create a **reversed** intent:
+
+| Taker Field | Maker Field | Transformation |
+|-------------|-------------|----------------|
+| `inputToken` | `outputToken` | Swapped |
+| `outputToken` | `inputToken` | Swapped |
+| `inputAmount` | `outputAmount` | Swapped |
+| `outputAmount` | `inputAmount` | Swapped |
+| (none) | `counterparty` | Set to taker address |
+| `unwrap` | `unwrap` | **Independent** - solver decides |
+
+<Warning>
+  Always set `counterparty` to the taker's address. Setting it to zero address exposes the trade to front-running attacks.
+</Warning>
+
+<Note>
+  The solver's `unwrap` flag is independent of the taker's. You decide whether you want to receive unwrapped native tokens.
+</Note>
+
+## Nonce Management
+
+Permit2 uses **unordered nonces** with bitmap tracking. Generate a random 256-bit nonce for each signature:
+
+```
+nonce = random 256-bit integer
+```
+
+The probability of collision is negligible (1 in 2^256). Do not try to fetch a "current" nonce from the contract.
+
+## Configuration
+
+Get the Permit2 and RFQSettlement contract addresses from the config endpoint:
+
+```bash
+curl "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "data": {
+    "chain_id": "...",
+    "chain_name": "...",
+    "rfq_settlement_address": "0x...",
+    "permit2_address": "0x..."
+  }
+}
+```
+
+## Permit2 Approval
+
+Approve Permit2 to spend your tokens (one-time per token):
+
+```
+ERC20.approve(permit2_address, max_uint256)
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Secure Private Key Storage">
+    Never hardcode your private key. Use environment variables or a secure key management service.
+  </Accordion>
+
+  <Accordion title="Validate All Inputs">
+    Always validate request parameters to prevent malicious inputs.
+  </Accordion>
+
+  <Accordion title="Verify Quote Before Signing">
+    Confirm the quote_id matches one you issued and the amounts are correct.
+  </Accordion>
+
+  <Accordion title="Monitor Your Positions">
+    Track your token balances and inventory to manage risk.
+  </Accordion>
+
+  <Accordion title="Rate Limiting">
+    Implement rate limiting to prevent abuse.
+  </Accordion>
+</AccordionGroup>
+
+## Checklist
+
+Before going live:
+
+<Steps>
+  <Step title="Endpoints Implemented">
+    All three endpoints (`/markets`, `/quote`, `/intent`) are working
+  </Step>
+  <Step title="Permit2 Approved">
+    Approved Permit2 for all tokens you'll trade
+  </Step>
+  <Step title="Sufficient Balance">
+    Wallet has sufficient token balances
+  </Step>
+  <Step title="HTTPS Configured">
+    API is accessible via HTTPS
+  </Step>
+  <Step title="Registered">
+    Registered with RFQ Protocol team
+  </Step>
+</Steps>
+
+<Note>
+  SDK with code examples coming soon.
+</Note>

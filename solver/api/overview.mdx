@@ -1,0 +1,138 @@
+---
+title: "API Overview"
+description: "Introduction to the RFQ Protocol API"
+---
+
+The RFQ Protocol exposes two sets of APIs:
+
+1. **Client API** - For frontends and integrators to request quotes and execute swaps
+2. **Solver API** - For market makers to provide liquidity
+
+## Base URLs
+
+| Environment | URL |
+|-------------|-----|
+| Production | `https://api-rfq.dragonswap.app` |
+| Testnet | `https://testnet-api-rfq.dragonswap.app` |
+
+## Authentication
+
+### Client API
+The Client API is public and does not require authentication. Clients interact with the RFQ Coordinator.
+
+### Solver API
+Solver endpoints require authentication using a Bearer token:
+
+```bash
+Authorization: Bearer <your_auth_key>
+```
+
+Contact the RFQ Protocol team to obtain your auth key.
+
+## API Version
+
+| Version | Status | Features |
+|---------|--------|----------|
+| **v1** | Live | REST API, full fills only |
+
+All endpoints are prefixed with `/api/v1/`.
+
+## Request Format
+
+- All requests use JSON
+- POST requests require `Content-Type: application/json`
+- Query parameters for GET requests
+
+## Response Format
+
+All responses follow this structure:
+
+```json
+// Success
+{
+  "status": "ok",
+  "data": { ... }
+}
+
+// Error
+{
+  "status": "error",
+  "error": "Error message" | { "field": ["Error"] }
+}
+```
+
+## Rate Limits
+
+| Endpoint | Limit |
+|----------|-------|
+| `/quote` | 100 requests/minute |
+| `/markets` | 60 requests/minute |
+| `/intent` | 30 requests/minute |
+
+<Note>
+  Contact the team if you need higher rate limits for production use.
+</Note>
+
+## Client API Endpoints
+
+For frontends and integrators:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/config` | Get chain configuration |
+| GET | `/api/v1/markets` | List available trading pairs |
+| GET | `/api/v1/quote` | Get best price quote |
+| POST | `/api/v1/intent` | Execute a swap |
+| GET | `/api/v1/health` | Check server status |
+
+## Solver API Endpoints
+
+For market makers:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/markets` | Report supported markets |
+| POST | `/api/v1/quote` | Provide a quote |
+| POST | `/api/v1/intent` | Sign maker intent |
+
+## Quick Start
+
+### 1. Get Available Markets
+
+```bash
+curl "https://api-rfq.dragonswap.app/api/v1/markets?chain_id=<CHAIN_ID>"
+```
+
+### 2. Request a Quote
+
+```bash
+curl "https://api-rfq.dragonswap.app/api/v1/quote?\
+input_token=<INPUT_TOKEN>&\
+output_token=<OUTPUT_TOKEN>&\
+amount=<AMOUNT>&\
+chain_id=<CHAIN_ID>"
+```
+
+### 3. Submit Intent
+
+```bash
+curl -X POST "https://api-rfq.dragonswap.app/api/v1/intent" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "rfq-q-...",
+    "chain_id": "<CHAIN_ID>",
+    "user_address": "0x...",
+    "swap_intent": { ... },
+    "signature_params": { ... }
+  }'
+```
+
+## Error Handling
+
+See the [Error Handling](/concepts/error-codes) guide for a complete list of error codes and how to handle them.
+
+## SDKs
+
+Coming soon:
+- TypeScript SDK
+- Python SDK

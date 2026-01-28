@@ -1,0 +1,79 @@
+---
+title: "Health Check"
+api: "GET /api/v1/health"
+---
+
+Check the health status of the RFQ Coordinator.
+
+## Response
+
+<ResponseField name="status" type="string">
+  Server status: `"ok"` if healthy, `"degraded"` if partially operational
+</ResponseField>
+
+<ResponseField name="uptime" type="string">
+  Server uptime in seconds (e.g., `"3600s"`)
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api-rfq.dragonswap.app/api/v1/health"
+```
+
+```javascript JavaScript
+const response = await fetch("https://api-rfq.dragonswap.app/api/v1/health");
+const data = await response.json();
+
+if (data.status === "ok") {
+  console.log("Server is healthy");
+} else {
+  console.warn("Server is degraded:", data);
+}
+```
+
+```python Python
+import requests
+
+response = requests.get("https://api-rfq.dragonswap.app/api/v1/health")
+data = response.json()
+
+if data["status"] == "ok":
+    print("Server is healthy")
+else:
+    print(f"Server is degraded: {data}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Healthy
+{
+  "status": "ok",
+  "uptime": "3600s"
+}
+```
+
+```json 503 - Degraded
+{
+  "status": "degraded",
+  "uptime": "3600s"
+}
+```
+</ResponseExample>
+
+## Use Cases
+
+- **Monitoring** - Set up automated health checks
+- **Load Balancer** - Configure health probes for routing
+- **Dashboard** - Display service status to users
+
+## Health States
+
+| Status | HTTP Code | Meaning |
+|--------|-----------|---------|
+| `ok` | 200 | All systems operational |
+| `degraded` | 503 | Some services unavailable |
+
+<Note>
+  A `degraded` status means some internal services are unavailable. Quote and intent endpoints may not function correctly in this state.
+</Note>
+

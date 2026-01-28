@@ -1,0 +1,112 @@
+---
+title: "Get Config"
+api: "GET /api/v1/config"
+---
+
+Get chain configuration including contract addresses and TTL settings.
+
+## Query Parameters
+
+<ParamField query="chain_id" type="string" required>
+  The blockchain chain ID for a supported network
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success, `"error"` on failure
+</ResponseField>
+
+<ResponseField name="chain_id" type="string">
+  The chain ID
+</ResponseField>
+
+<ResponseField name="chain_name" type="string">
+  Human-readable chain name
+</ResponseField>
+
+<ResponseField name="rfq_settlement_address" type="string">
+  RFQSettlement contract address for this chain
+</ResponseField>
+
+<ResponseField name="permit2_address" type="string">
+  Permit2 contract address for this chain
+</ResponseField>
+
+<ResponseField name="min_quote_ttl_ms" type="number">
+  Minimum quote TTL in milliseconds
+</ResponseField>
+
+<ResponseField name="max_quote_ttl_ms" type="number">
+  Maximum quote TTL in milliseconds
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+```
+
+```javascript JavaScript
+const CHAIN_ID = "..."; // Your chain ID
+
+const response = await fetch(
+  `https://api-rfq.dragonswap.app/api/v1/config?chain_id=${CHAIN_ID}`
+);
+const data = await response.json();
+
+if (data.status === "ok") {
+  console.log("Settlement:", data.rfq_settlement_address);
+  console.log("Permit2:", data.permit2_address);
+}
+```
+
+```python Python
+import requests
+
+CHAIN_ID = "..."  # Your chain ID
+
+response = requests.get(
+    "https://api-rfq.dragonswap.app/api/v1/config",
+    params={"chain_id": CHAIN_ID}
+)
+data = response.json()
+print(f"Settlement: {data['rfq_settlement_address']}")
+print(f"Permit2: {data['permit2_address']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "chain_id": "1329",
+  "chain_name": "Sei",
+  "rfq_settlement_address": "0x...",
+  "permit2_address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+  "min_quote_ttl_ms": 15000,
+  "max_quote_ttl_ms": 30000
+}
+```
+
+```json 400 - Validation Error
+{
+  "status": "error",
+  "error": "chain_id: Required",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+
+```json 400 - Unsupported Chain
+{
+  "status": "error",
+  "error": "Chain 999 is not supported. Supported chains: 1329",
+  "code": "CHAIN_NOT_SUPPORTED"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Use this endpoint to fetch contract addresses dynamically instead of hardcoding them
+- TTL values indicate the expected quote validity range for this chain
+- Supported chains may be expanded in the future

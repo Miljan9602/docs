@@ -1,0 +1,252 @@
+---
+title: "Complete Flow Diagram"
+description: "Detailed sequence diagram of the RFQ Protocol"
+---
+
+This page provides a comprehensive view of all interactions in the RFQ Protocol, broken down by phase for clarity.
+
+## Actors
+
+| Actor | Description |
+|-------|-------------|
+| User | End user with wallet (MetaMask, etc.) |
+| Frontend | DApp UI |
+| RFQ Coordinator | Off-chain coordinator that aggregates quotes |
+| Solver(s) | Market maker services |
+| Permit2 | Uniswap Permit2 contract |
+| RFQSettlement | Settlement contract |
+| Blockchain | EVM chain |
+
+---
+
+## Phase 1: Quote Request
+
+The user requests a price quote, which is fetched from all registered solvers in parallel.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant F as Frontend
+    participant S as RFQ Coordinator
+    participant M as Solver(s)
+    participant B as Blockchain
+
+    U->>F: Select tokens & amount
+    F->>S: GET /api/v1/quote
+    Note right of S: Query all solvers in parallel
+    S->>M: POST /api/v1/quote
+    Note right of M: Calculate quote
+    M-->>S: Quote response
+    Note right of S: Select best quote
+    S->>S: Cache quote in DB
+    S-->>F: Best quote response
+    F-->>U: Display quote
+```
+
+<Steps>
+  <Step title="User Selection">
+    User selects input token, output token, and amount in the UI
+  </Step>
+  <Step title="Quote Request">
+    Frontend sends `GET /api/v1/quote` with token addresses and amount
+  </Step>
+  <Step title="Parallel Queries">
+    RFQ Coordinator queries ALL registered solvers in parallel (5s timeout)
+  </Step>
+  <Step title="Price Calculation">
+    Each solver calculates a quote based on their own pricing logic and returns it with expiry
+  </Step>
+  <Step title="Best Quote Selection">
+    Coordinator compares all quotes and returns the one with highest `amount_out`
+  </Step>
+</Steps>
+
+---
+
+## Phase 2: Approval (One-Time)
+
+If the user hasn't approved Permit2 for this token, they need to do so once.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant P as Permit2
+
+    F->>P: Check allowance
+    P-->>F: Current allowance
+
+    alt allowance < amount
+        F->>U: Request approval
+        U->>P: approve(Permit2, maxUint256)
+        P-->>U: Approval confirmed
+    end
+```
+
+<Note>
+  This phase only happens **once per token**. After approval, users can swap without additional on-chain transactions.
+</Note>
+
+---
+
+## Phase 3: Sign Intent
+
+The user signs their swap intent using EIP-712 typed data signing.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+
+    U->>F: Click "Swap"
+    F->>F: Build taker_swap_intent
+    F->>U: Request EIP-712 signature
+    U->>U: Sign in wallet
+    U-->>F: Signed taker_swap_intent
+```
+
+<Steps>
+  <Step title="Build Intent">
+    Frontend constructs the `taker_swap_intent` with input/output tokens, amounts, unwrap flag, and referral
+  </Step>
+  <Step title="EIP-712 Signature">
+    User signs the intent using their wallet's `signTypedData` function
+  </Step>
+  <Step title="Signature Params">
+    The signature includes deadline, nonce (from Permit2), signer address, and signature bytes
+  </Step>
+</Steps>
+
+---
+
+## Phase 4: Submit Intent
+
+The signed intent is submitted to the coordinator, which forwards it to the solver for counter-signature.
+
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant S as RFQ Coordinator
+    participant M as Solver
+    participant P as Permit2
+    participant B as Blockchain
+
+    F->>S: POST /api/v1/intent
+    S->>S: Validate taker signature
+    S->>S: Check quote not expired
+    S->>S: Verify amounts match
+    S->>M: POST /api/v1/intent
+    M->>M: Build reversed intent
+    M->>P: Check allowance
+    alt allowance < amount
+        M->>B: ERC20.approve(Permit2)
+    end
+    M->>M: Sign maker_swap_intent
+    M-->>S: Signed maker_swap_intent
+    S->>S: Verify maker signature
+```
+
+<Steps>
+  <Step title="Validation">
+    Coordinator validates taker signature, checks quote hasn't expired, and verifies amounts match
+  </Step>
+  <Step title="Forward to Solver">
+    Coordinator sends the signed intent to the winning solver
+  </Step>
+  <Step title="Intent Reversal">
+    Solver builds a REVERSED intent: swaps input/output tokens and amounts, sets counterparty to user
+  </Step>
+  <Step title="Solver Signature">
+    Solver signs their reversed intent and returns it
+  </Step>
+</Steps>
+
+---
+
+## Phase 5: On-Chain Settlement
+
+The coordinator executes the atomic swap on-chain via the RFQSettlement contract.
+
+```mermaid
+sequenceDiagram
+    participant S as RFQ Coordinator
+    participant R as RFQSettlement
+    participant P as Permit2
+    participant B as Blockchain
+    participant F as Frontend
+    participant U as User
+
+    S->>R: settleRFQ(maker, taker, fee)
+    R->>R: Validate counterparty
+    R->>R: Validate tokens align
+    R->>R: Validate amounts match
+    R->>P: permitWitnessTransferFrom(taker)
+    P->>B: Transfer taker tokens
+    R->>P: permitWitnessTransferFrom(maker)
+    P->>B: Transfer maker tokens
+    R->>B: Distribute tokens
+    R->>R: Emit RFQSettled event
+    B-->>S: Transaction receipt
+    S->>S: Save to DB
+    S-->>F: Success + tx_hash
+    F-->>U: Swap complete!
+```
+
+<Steps>
+  <Step title="Contract Call">
+    Coordinator calls `RFQSettlement.settleRFQ()` with both signed intents
+  </Step>
+  <Step title="Validation">
+    Contract validates counterparty matches, tokens align, amounts match, and fee is within limits
+  </Step>
+  <Step title="Permit2 Transfers">
+    Contract calls Permit2 to transfer tokens from both parties
+  </Step>
+  <Step title="Final Distribution">
+    Contract distributes: Fee → Treasury, Output → User, Input → Solver
+  </Step>
+</Steps>
+
+---
+
+## Timing Constraints
+
+| Phase | Timeout | Notes |
+|-------|---------|-------|
+| Quote Request | 5 seconds | Coordinator waits max 5s for solver responses |
+| Quote TTL | 10-60 seconds | Depends on market volatility |
+| Intent Submit | 10 seconds | Coordinator waits max 10s for solver signature |
+| Settlement | ~3 seconds | Depends on block time |
+
+```
+Timeline:
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [0s]          [5s]              [35s]            [45s]        [48s]   │
+│   │             │                  │                │            │      │
+│   ├─ Quote ────►├─── Quote Valid ─►├─ Submit ──────►├─ Settle ──►│      │
+│   │  Request    │    (30s TTL)     │  Intent        │  On-chain  │      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Error Scenarios
+
+| Phase | Error | HTTP Status | Cause |
+|-------|-------|-------------|-------|
+| **Quote Request** | No quotes available | 503 | All solvers timed out |
+| | Validation error | 400 | Invalid parameters |
+| | Market not found | 404 | Token pair not supported |
+| **Sign Intent** | Flow cancelled | - | User rejected signature |
+| | Quote expired | 400 | TTL exceeded |
+| **Submit Intent** | Invalid signature | 400 | Signature verification failed |
+| | Solver timeout | 504 | Solver didn't respond |
+| | Solver error | 500 | Solver internal error |
+| **Settlement** | InsufficientBalance | Revert | User lacks tokens |
+| | InvalidNonce | Revert | Nonce already used |
+| | SignatureExpired | Revert | Deadline passed |
+
+See [Error Handling](/concepts/error-codes) for complete error documentation.

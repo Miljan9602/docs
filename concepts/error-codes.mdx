@@ -1,0 +1,159 @@
+---
+title: "Error Codes"
+description: "Complete reference for RFQ Protocol error codes"
+---
+
+All API errors include a machine-readable `code` field for programmatic handling.
+
+## Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "status": "error",
+  "error": "Human readable message",
+  "code": "ERROR_CODE"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Always `"error"` |
+| `error` | string | Human-readable error message describing exactly what's wrong |
+| `code` | string | Machine-readable error code (see below) |
+
+## Validation Errors
+
+Validation errors include a clear message describing the issue:
+
+```json
+{
+  "status": "error",
+  "error": "chain_id: Required",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+
+For multiple validation errors, messages are comma-separated:
+
+```json
+{
+  "status": "error",
+  "error": "chain_id: Required, amount: Invalid number",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+
+## Error Code Reference
+
+### Validation Errors (400)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `VALIDATION_INVALID_PARAM` | 400 | Request validation failed | Check the `error` message for specific issues |
+| `VALIDATION_INVALID_CHAIN` | 400 | Invalid chain ID | Use a supported chain ID (e.g., `"1329"` for Sei) |
+| `VALIDATION_INVALID_ADDRESS` | 400 | Invalid Ethereum address | Ensure address is 0x-prefixed, 40 hex characters |
+| `VALIDATION_INVALID_AMOUNT` | 400 | Invalid amount format | Amount must be a positive integer string (wei) |
+| `VALIDATION_SIGNER_MISMATCH` | 400 | Signer doesn't match user | Ensure `signer` in signature_params matches `user_address` |
+
+### Market Errors (400/404)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `MARKET_NOT_FOUND` | 404 | Trading pair not found | Check token addresses and pair availability |
+| `MARKET_NOT_SUPPORTED` | 400 | Market not supported | This pair is not available for trading |
+| `MARKET_NO_MAKERS` | 404 | No market makers for pair | No solvers provide liquidity for this pair |
+
+### Quote Errors (400/404/503)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `QUOTE_NOT_FOUND` | 404 | Quote ID not found | Request a new quote |
+| `QUOTE_EXPIRED` | 400 | Quote has expired | Request a fresh quote and submit faster |
+| `QUOTE_AMOUNT_MISMATCH` | 400 | Amounts don't match quote | Use exact amounts from the quote response |
+| `QUOTE_UNAVAILABLE` | 503 | Unable to get quote | Retry later or try different amounts |
+| `QUOTE_REJECTED` | 400 | Quote could not be fulfilled | Request a new quote and try again |
+
+### Intent Errors (400/500)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `INTENT_INVALID_SIGNATURE` | 400 | Invalid user signature | Verify EIP-712 signing is correct |
+| `SETTLEMENT_FAILED` | 500 | On-chain settlement failed | Check token balances and approvals, try again |
+
+### Chain Errors (400)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `CHAIN_NOT_SUPPORTED` | 400 | Chain not supported | Use a supported chain ID |
+
+### Rate Limiting (429)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests | Implement exponential backoff |
+
+### Server Errors (500)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `INTERNAL_ERROR` | 500 | Internal server error | Retry or contact support |
+
+## Handling Errors
+
+### TypeScript Example
+
+```typescript
+import type { ApiErrorResponse } from "rfq-api";
+
+async function getQuote(params: QuoteParams) {
+  const response = await fetch(`/api/v1/quote?${new URLSearchParams(params)}`);
+  const data = await response.json();
+
+  if (data.status === "error") {
+    switch (data.code) {
+      case "QUOTE_UNAVAILABLE":
+        // Retry with exponential backoff
+        return retryWithBackoff(() => getQuote(params));
+
+      case "MARKET_NO_MAKERS":
+        // Show user-friendly message
+        throw new Error("This trading pair is not available");
+
+      case "VALIDATION_INVALID_PARAM":
+        // Handle validation errors - message contains the specific issue
+        throw new Error(data.error);
+
+      default:
+        throw new Error(`${data.code}: ${data.error}`);
+    }
+  }
+
+  return data;
+}
+```
+
+### Python Example
+
+```python
+import requests
+
+def get_quote(params):
+    response = requests.get("/api/v1/quote", params=params)
+    data = response.json()
+
+    if data["status"] == "error":
+        code = data["code"]
+
+        if code == "QUOTE_UNAVAILABLE":
+            # Retry logic
+            raise RetryableError(data["error"])
+        elif code == "VALIDATION_INVALID_PARAM":
+            # Error message contains the specific validation issue
+            raise ValueError(data["error"])
+        else:
+            raise APIError(f"{code}: {data['error']}")
+
+    return data
+```
