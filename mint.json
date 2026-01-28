@@ -27,8 +27,8 @@
   ],
   "navigation": [
     {
-      "group": "Overview",
-      "pages": ["concepts/introduction"]
+      "group": "Get Started",
+      "pages": ["index", "concepts/introduction"]
     },
     {
       "group": "Architecture",
