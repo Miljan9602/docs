@@ -6,84 +6,83 @@
   "colors": {
     "primary": "#0D9373",
     "light": "#07C983",
-    "dark": "#0D9373",
-    "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
-    }
+    "dark": "#0D9373"
   },
-  "tabs": [
-    {
-      "name": "Core Concepts",
-      "url": "concepts"
-    },
-    {
-      "name": "Client Integration",
-      "url": "frontend"
-    },
-    {
-      "name": "Solver Integration",
-      "url": "solver"
-    }
-  ],
-  "navigation": [
-    {
-      "group": "Get Started",
-      "pages": ["index", "concepts/introduction"]
-    },
-    {
-      "group": "Architecture",
-      "pages": [
-        "concepts/architecture/overview",
-        "concepts/architecture/flow-diagram",
-        "concepts/architecture/settlement",
-        "concepts/architecture/intent-reversal"
-      ]
-    },
-    {
-      "group": "Concepts",
-      "pages": [
-        "concepts/error-codes",
-        "concepts/ttl-per-market",
-        "concepts/permit2",
-        "concepts/versioning"
-      ]
-    },
-    {
-      "group": "Getting Started",
-      "pages": ["frontend/getting-started", "frontend/integration-guide"]
-    },
-    {
-      "group": "API Reference",
-      "pages": [
-        "frontend/api/overview",
-        "frontend/api/get-config",
-        "frontend/api/get-markets",
-        "frontend/api/get-quote",
-        "frontend/api/post-intent"
-      ]
-    },
-    {
-      "group": "Getting Started",
-      "pages": ["solver/getting-started", "solver/integration-guide"]
-    },
-    {
-      "group": "API Specification",
-      "pages": [
-        "solver/api/overview",
-        "solver/api/post-markets",
-        "solver/api/post-quote",
-        "solver/api/post-intent"
-      ]
-    }
-  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Core Concepts",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["index", "concepts/introduction"]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "concepts/architecture/overview",
+              "concepts/architecture/flow-diagram",
+              "concepts/architecture/settlement",
+              "concepts/architecture/intent-reversal"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/error-codes",
+              "concepts/ttl-per-market",
+              "concepts/permit2",
+              "concepts/versioning"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Client Integration",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["frontend/getting-started", "frontend/integration-guide"]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "frontend/api/overview",
+              "frontend/api/get-config",
+              "frontend/api/get-markets",
+              "frontend/api/get-quote",
+              "frontend/api/post-intent"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Solver Integration",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["solver/getting-started", "solver/integration-guide"]
+          },
+          {
+            "group": "API Specification",
+            "pages": [
+              "solver/api/overview",
+              "solver/api/post-markets",
+              "solver/api/post-quote",
+              "solver/api/post-intent"
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "api": {
     "baseUrl": "https://api-rfq.dragonswap.app",
     "playground": {
       "mode": "show"
     }
   },
-  "modeToggle": {
+  "appearance": {
     "default": "dark"
   }
 }
