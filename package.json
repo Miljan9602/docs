@@ -1,7 +1,7 @@
 {
-  "name": "rfq-docs",
+  "name": "nimalabs-docs",
   "version": "1.0.0",
-  "description": "RFQ Protocol Documentation",
+  "description": "NIMA Labs Documentation",
   "private": true,
   "scripts": {
     "dev": "mintlify dev",
