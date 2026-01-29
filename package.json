@@ -1,7 +1,7 @@
 {
-  "name": "nimalabs-docs",
+  "name": "saphyre-docs",
   "version": "1.0.0",
-  "description": "NIMA Labs Documentation",
+  "description": "Saphyre Documentation",
   "private": true,
   "scripts": {
     "dev": "mintlify dev",
