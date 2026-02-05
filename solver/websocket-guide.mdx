@@ -183,8 +183,6 @@ Markets are synced automatically:
 | `min_size` | number \| null | no | Minimum order size in USD |
 | `max_size` | number \| null | no | Maximum order size in USD |
 
-**Timeout:** 10 seconds
-
 ## Quotes
 
 Sent when a user requests a price quote via the public API.
@@ -261,8 +259,6 @@ Sent when a user requests a price quote via the public API.
   }
 }
 ```
-
-**Timeout:** 5 seconds
 
 ## Intent Signing
 
@@ -344,8 +340,6 @@ The signing logic is identical to the HTTP transport. See [Sign Intent](/solver/
 }
 ```
 
-**Timeout:** 10 seconds
-
 ## Close Codes
 
 | Code | Name | Description |
@@ -371,6 +365,30 @@ delay = min(1000 * 2^attempt, 30000) + random jitter (25%)
 
 ## Configuration
 
+### Chain Config Endpoint
+
+Fetch contract addresses dynamically from the coordinator instead of hardcoding them:
+
+**Request:**
+```bash
+curl -X GET "https://api-rfq.dragonswap.app/api/v1/config?chain_id=1329"
+```
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "chain_id": "1329",
+  "chain_name": "Sei Mainnet",
+  "rfq_settlement_address": "0x...",
+  "permit2_address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+  "min_quote_ttl_ms": 15000,
+  "max_quote_ttl_ms": 30000
+}
+```
+
+Use `rfq_settlement_address` and `permit2_address` from this response when signing intents. See [Get Config](/frontend/api/get-config) for full details.
+
 ### Solver Environment
 
 ```bash
@@ -382,73 +400,97 @@ MM_AUTH_KEY=your-plain-text-auth-key
 CHAIN_ID=1329
 CHAIN_RPC_URL=https://evm-rpc.sei-apis.com
 SOLVER_PRIVATE_KEY=0x...
-RFQ_SETTLEMENT_ADDRESS=0x...
-PERMIT2_ADDRESS=0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98
 
 # Quote pricing
 SPREAD_BPS=30  # 0.3% spread
 ```
 
-## Example: PHP/Laravel Solver
+<Note>
+  `rfq_settlement_address` and `permit2_address` should be fetched from the `/api/v1/config` endpoint rather than hardcoded. This ensures your solver stays up to date if contract addresses change.
+</Note>
 
-```php
-$conn->on('message', function ($msg) use ($unpacker, $conn) {
-    $unpacker->reset((string) $msg);
-    $data = $unpacker->unpack();
+## Example: Node.js Solver
 
-    switch ($data['action']) {
-        case 'ping':
-            $conn->send(msgpack(['action' => 'pong']));
-            break;
+```javascript
+import WebSocket from "ws";
+import { encode, decode } from "@msgpack/msgpack";
 
-        case 'get_markets':
-            $conn->send(msgpack([
-                'action' => 'markets_response',
-                'request_id' => $data['request_id'],
-                'success' => true,
-                'data' => [
-                    [
-                        'input_token' => '0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7',
-                        'output_token' => '0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392',
-                        'min_size' => 100,
-                        'max_size' => 10000,
-                    ],
-                ],
-            ]));
-            break;
+const WS_URL = "wss://api-rfq.dragonswap.app/api/v2/solver-stream";
+const AUTH_KEY = process.env.MM_AUTH_KEY;
 
-        case 'get_quote':
-            $conn->send(msgpack([
-                'action' => 'quote_response',
-                'request_id' => $data['request_id'],
-                'success' => true,
-                'data' => [
-                    'quote_id' => $data['data']['quote_id'],
-                    'amount_out' => $calculatedOutput,
-                    'expiry' => (int) $data['data']['expiry_timestamp'],
-                    'chain_id' => $data['data']['chain_id'],
-                ],
-            ]));
-            break;
+function connect() {
+  const ws = new WebSocket(WS_URL);
 
-        case 'sign_intent':
-            // Sign reversed swap intent and respond
-            $conn->send(msgpack([
-                'action' => 'intent_response',
-                'request_id' => $data['request_id'],
-                'success' => true,
-                'data' => [
-                    'quote_id' => $data['data']['quote_id'],
-                    'solver_address' => $solverAddress,
-                    'signed_swap_intent' => [
-                        'swap_intent' => [ /* reversed intent */ ],
-                        'signature_params' => [ /* EIP-712 signature */ ],
-                    ],
-                ],
-            ]));
-            break;
+  ws.on("open", () => {
+    // First message must be auth
+    ws.send(encode({ action: "auth", data: { token: AUTH_KEY } }));
+  });
+
+  ws.on("message", (raw) => {
+    const msg = decode(raw);
+
+    switch (msg.action) {
+      case "auth_success":
+        console.log(`Authenticated as ${msg.data.solver_name}`);
+        break;
+
+      case "ping":
+        ws.send(encode({ action: "pong" }));
+        break;
+
+      case "get_markets":
+        ws.send(encode({
+          action: "markets_response",
+          request_id: msg.request_id,
+          success: true,
+          data: [
+            {
+              chain_id: msg.data.chain_id,
+              input_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+              output_token: "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+              min_size: 100,
+              max_size: 10000,
+            },
+          ],
+        }));
+        break;
+
+      case "get_quote":
+        const { quote_id, chain_id, amount, expiry_timestamp } = msg.data;
+        const amountOut = calculateOutput(amount); // your pricing logic
+        ws.send(encode({
+          action: "quote_response",
+          request_id: msg.request_id,
+          success: true,
+          data: {
+            quote_id,
+            amount_out: amountOut,
+            expiry: expiry_timestamp, // must be a number
+            chain_id,
+          },
+        }));
+        break;
+
+      case "sign_intent":
+        const signedIntent = signReversedIntent(msg.data); // your signing logic
+        ws.send(encode({
+          action: "intent_response",
+          request_id: msg.request_id,
+          success: true,
+          data: signedIntent,
+        }));
+        break;
     }
-});
+  });
+
+  ws.on("close", (code, reason) => {
+    console.log(`Disconnected: ${code} ${reason}`);
+    // Reconnect with exponential backoff
+    setTimeout(connect, 1000 + Math.random() * 500);
+  });
+}
+
+connect();
 ```
 
 ## Example: Rust Solver
@@ -457,36 +499,76 @@ $conn->on('message', function ($msg) use ($unpacker, $conn) {
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use futures_util::{StreamExt, SinkExt};
 use rmp_serde::{to_vec, from_slice};
+use serde_json::{json, Value};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     let url = "wss://api-rfq.dragonswap.app/api/v2/solver-stream";
-    let (ws_stream, _) = connect_async(url).await.unwrap();
-    let (mut write, mut read) = ws_stream.split();
+    let (ws, _) = connect_async(url).await?;
+    let (mut tx, mut rx) = ws.split();
 
     // Authenticate
-    let auth = serde_json::json!({
-        "action": "auth",
-        "data": { "token": "your-key" }
-    });
-    write.send(Message::Binary(to_vec(&auth).unwrap()))
-        .await.unwrap();
+    let auth = json!({ "action": "auth", "data": { "token": "your-key" } });
+    tx.send(Message::Binary(to_vec(&auth)?)).await?;
 
-    while let Some(Ok(Message::Binary(data))) = read.next().await {
-        let msg: serde_json::Value = from_slice(&data).unwrap();
+    while let Some(Ok(Message::Binary(data))) = rx.next().await {
+        let msg: Value = from_slice(&data)?;
+        let request_id = msg["request_id"].clone();
+
         match msg["action"].as_str().unwrap_or("") {
-            "auth_success" => println!("Authenticated"),
-            "ping" => {
-                let pong = serde_json::json!({ "action": "pong" });
-                write.send(Message::Binary(to_vec(&pong).unwrap()))
-                    .await.unwrap();
+            "auth_success" => {
+                println!("Authenticated as {}", msg["data"]["solver_name"]);
             }
-            "get_markets" => { /* respond with markets_response */ }
-            "get_quote" => { /* respond with quote_response */ }
-            "sign_intent" => { /* respond with intent_response */ }
+            "ping" => {
+                tx.send(Message::Binary(to_vec(&json!({ "action": "pong" }))?))
+                    .await?;
+            }
+            "get_markets" => {
+                let resp = json!({
+                    "action": "markets_response",
+                    "request_id": request_id,
+                    "success": true,
+                    "data": [{
+                        "chain_id": msg["data"]["chain_id"],
+                        "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+                        "output_token": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+                        "min_size": 100,
+                        "max_size": 10000
+                    }]
+                });
+                tx.send(Message::Binary(to_vec(&resp)?)).await?;
+            }
+            "get_quote" => {
+                let d = &msg["data"];
+                let amount_out = calculate_output(&d["amount"]); // your pricing
+                let resp = json!({
+                    "action": "quote_response",
+                    "request_id": request_id,
+                    "success": true,
+                    "data": {
+                        "quote_id": d["quote_id"],
+                        "amount_out": amount_out,
+                        "expiry": d["expiry_timestamp"],
+                        "chain_id": d["chain_id"]
+                    }
+                });
+                tx.send(Message::Binary(to_vec(&resp)?)).await?;
+            }
+            "sign_intent" => {
+                let signed = sign_reversed_intent(&msg["data"]); // your signing
+                let resp = json!({
+                    "action": "intent_response",
+                    "request_id": request_id,
+                    "success": true,
+                    "data": signed
+                });
+                tx.send(Message::Binary(to_vec(&resp)?)).await?;
+            }
             _ => {}
         }
     }
+
+    Ok(())
 }
 ```
 
