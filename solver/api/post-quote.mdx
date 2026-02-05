@@ -117,6 +117,45 @@ curl -X POST "https://solver.example.com/api/v1/quote" \
 ```
 </ResponseExample>
 
+## WSS Equivalent
+
+For WebSocket solvers, the coordinator sends a `get_quote` message and expects a `quote_response`.
+
+**Request (Coordinator -> Solver):**
+```json
+{
+  "action": "get_quote",
+  "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "data": {
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "chain_id": "1329",
+    "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+    "output_token": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+    "amount": "1000000000000000000",
+    "expiry_timestamp": 1738780830000
+  }
+}
+```
+
+**Response (Solver -> Coordinator):**
+```json
+{
+  "action": "quote_response",
+  "request_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "success": true,
+  "data": {
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "amount_out": "249250000",
+    "expiry": 1738780830000,
+    "chain_id": "1329"
+  }
+}
+```
+
+<Warning>
+  The `expiry` field **must be a number** (integer), not a string. The coordinator validates `quote_id`, `amount_out`, and `expiry` from the response.
+</Warning>
+
 ## Implementation Example
 
 ```typescript

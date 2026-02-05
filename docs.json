@@ -65,7 +65,7 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["solver/getting-started", "solver/integration-guide"]
+            "pages": ["solver/getting-started", "solver/integration-guide", "solver/websocket-guide"]
           },
           {
             "group": "API Specification",

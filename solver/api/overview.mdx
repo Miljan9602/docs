@@ -33,9 +33,13 @@ Contact the RFQ Protocol team to obtain your auth key.
 
 | Version | Status | Features |
 |---------|--------|----------|
-| **v1** | Live | REST API, full fills only |
+| **v1** | Live | REST API + WebSocket (WSS), full fills only |
 
-All endpoints are prefixed with `/api/v1/`.
+HTTP endpoints are prefixed with `/api/v1/`. WebSocket solvers connect to `/api/v2/solver-stream`.
+
+<Note>
+  The solver API endpoints below describe the HTTP (REST) protocol. For WebSocket integration, see the [WebSocket Guide](/solver/websocket-guide).
+</Note>
 
 ## Request Format
 
@@ -87,13 +91,23 @@ For frontends and integrators:
 
 ## Solver API Endpoints
 
-For market makers:
+For market makers (HTTP transport):
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/markets` | Report supported markets |
 | POST | `/api/v1/quote` | Provide a quote |
 | POST | `/api/v1/intent` | Sign maker intent |
+
+For market makers (WSS transport):
+
+| Action | Response Action | Description |
+|--------|-----------------|-------------|
+| `get_markets` | `markets_response` | Report supported markets |
+| `get_quote` | `quote_response` | Provide a quote |
+| `sign_intent` | `intent_response` | Sign maker intent |
+
+See the [WebSocket Guide](/solver/websocket-guide) for full WSS protocol details.
 
 ## Quick Start
 

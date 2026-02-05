@@ -35,30 +35,44 @@ sequenceDiagram
     RFQ Coordinator->>Chain: Execute settlement
 ```
 
+## Transport Options
+
+Choose the transport that fits your stack:
+
+| | HTTP (REST) | WebSocket (WSS) |
+|---|---|---|
+| **Direction** | Coordinator calls your API | You connect to coordinator |
+| **Serialization** | JSON | MessagePack (binary) |
+| **Infrastructure** | Requires public HTTPS endpoint | No public endpoint needed |
+| **Recommended for** | Simple integrations | Rust, Go, Python, high-performance |
+
 ## Requirements
 
 | Requirement | Description |
 |-------------|-------------|
 | **Solver Wallet** | EOA with sufficient token balances |
-| **HTTPS Endpoint** | Publicly accessible API endpoint |
+| **API Endpoint** | HTTPS endpoint (HTTP) or WebSocket connection (WSS) |
 | **Price Feed** | Real-time price data for your markets |
 | **Permit2 Approval** | Approve Permit2 to spend your tokens |
 
-## Endpoints to Implement
+## Operations
 
-Your solver must expose these endpoints:
+Your solver must handle these operations (via HTTP endpoints or WSS messages):
 
-| Endpoint | Purpose |
-|----------|---------|
-| `POST /api/v1/markets` | Return markets you support |
-| `POST /api/v1/quote` | Return price quote for a trade |
-| `POST /api/v1/intent` | Sign maker intent for settlement |
+| Operation | HTTP Endpoint | WSS Action |
+|-----------|---------------|------------|
+| Return supported markets | `POST /api/v1/markets` | `get_markets` -> `markets_response` |
+| Return price quote | `POST /api/v1/quote` | `get_quote` -> `quote_response` |
+| Sign maker intent | `POST /api/v1/intent` | `sign_intent` -> `intent_response` |
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Full Integration Guide" icon="book" href="/solver/integration-guide">
-    Detailed guide with code examples
+<CardGroup cols={3}>
+  <Card title="HTTP Integration" icon="book" href="/solver/integration-guide">
+    REST API guide with code examples
+  </Card>
+  <Card title="WebSocket Integration" icon="bolt" href="/solver/websocket-guide">
+    WSS guide for real-time communication
   </Card>
   <Card title="API Specification" icon="code" href="/solver/api/overview">
     Full API documentation

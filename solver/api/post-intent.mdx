@@ -133,6 +133,71 @@ curl -X POST "https://solver.example.com/api/v1/intent" \
 ```
 </ResponseExample>
 
+## WSS Equivalent
+
+For WebSocket solvers, the coordinator sends a `sign_intent` message and expects an `intent_response`.
+
+**Request (Coordinator -> Solver):**
+```json
+{
+  "action": "sign_intent",
+  "request_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "data": {
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "chain_id": "1329",
+    "user_address": "0x1234567890abcdef1234567890abcdef12345678",
+    "fee": "25000000",
+    "intent": {
+      "inputToken": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "outputToken": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+      "inputAmount": "975000000000000000",
+      "outputAmount": "249250000"
+    },
+    "taker_data": {
+      "unwrap": false,
+      "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "deadline": "1705612890",
+      "nonce": "0xabc123...",
+      "signer": "0x1234567890abcdef1234567890abcdef12345678",
+      "signature": "0x..."
+    }
+  }
+}
+```
+
+**Response (Solver -> Coordinator):**
+```json
+{
+  "action": "intent_response",
+  "request_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "success": true,
+  "data": {
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "solver_address": "0x7d344433d68955878756c017aa09e130236f44e9",
+    "signed_swap_intent": {
+      "swap_intent": {
+        "counterparty": "0x1234567890abcdef1234567890abcdef12345678",
+        "inputToken": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+        "outputToken": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+        "inputAmount": "249250000",
+        "outputAmount": "975000000000000000",
+        "unwrap": false
+      },
+      "signature_params": {
+        "deadline": "1705612890",
+        "nonce": "0xabc123...",
+        "signer": "0x7d344433d68955878756c017aa09e130236f44e9",
+        "signature": "0x..."
+      }
+    }
+  }
+}
+```
+
+<Note>
+  The WSS intent request includes additional `fee` and `taker_data` fields not present in the HTTP version. The signing logic is identical. See the [WebSocket Guide](/solver/websocket-guide) for full details.
+</Note>
+
 ## Intent Reversal
 
 The solver must **reverse** the taker's intent:

@@ -84,6 +84,43 @@ curl -X POST "https://solver.example.com/api/v1/markets" \
 ```
 </ResponseExample>
 
+## WSS Equivalent
+
+For WebSocket solvers, the coordinator sends a `get_markets` message and expects a `markets_response`.
+
+**Request (Coordinator -> Solver):**
+```json
+{
+  "action": "get_markets",
+  "request_id": "2198702c-bcad-4110-baae-e62e7b34ea71",
+  "data": {
+    "chain_id": "1329"
+  }
+}
+```
+
+**Response (Solver -> Coordinator):**
+```json
+{
+  "action": "markets_response",
+  "request_id": "2198702c-bcad-4110-baae-e62e7b34ea71",
+  "success": true,
+  "data": [
+    {
+      "chain_id": "1329",
+      "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "min_size": 100,
+      "max_size": 10000
+    }
+  ]
+}
+```
+
+<Note>
+  WSS markets are synced automatically on connect and every 60 seconds. See the [WebSocket Guide](/solver/websocket-guide) for full details.
+</Note>
+
 ## Implementation Example
 
 ```typescript

@@ -9,20 +9,19 @@ The RFQ Protocol uses semantic versioning for its API.
 
 | Version | Protocol | Fill Type | Status |
 |---------|----------|-----------|--------|
-| **v1** | REST API | Full fills only | **Live** |
+| **v1** | REST API + WebSocket (WSS) | Full fills only | **Live** |
 
 ## v1 (Current)
 
 Version 1 is the current production API:
 
-- **REST API** - All endpoints use HTTP/HTTPS
+- **REST API** - Public-facing endpoints use HTTP/HTTPS with JSON payloads
+- **WebSocket (WSS)** - Server-to-solver communication using raw WebSocket (RFC 6455) with MessagePack binary serialization
 - **Full fills only** - Orders must be completely filled or they fail
-- Synchronous request/response pattern
-- JSON payloads
 - Standardized error responses with error codes
 - Request ID tracing
 
-### Endpoints
+### Public API Endpoints (HTTP)
 
 ```
 GET  /api/v1/config
@@ -31,6 +30,16 @@ GET  /api/v1/quote
 POST /api/v1/intent
 GET  /api/v1/health
 ```
+
+### Solver Connection (WSS)
+
+Solvers can connect to the server via WebSocket for real-time communication:
+
+```
+WSS /api/v2/solver-stream
+```
+
+The WSS transport supports the same operations as the REST API (markets, quotes, intents) using MessagePack-encoded binary frames. See the [Solver Integration Guide](/solver/integration-guide) for details.
 
 ### Response Format
 
@@ -59,14 +68,8 @@ All v1 responses follow a consistent format:
 
 See [Error Codes](/concepts/error-codes) for the complete error reference.
 
-## v2 (Coming Soon)
-
-<Warning>
-  v2 features are in planning and development. The API design is not yet finalized.
-</Warning>
+## Future Considerations
 
 Future features under consideration:
-- **WebSocket streaming** - Real-time price updates
 - **Partial fills** - Large orders filled by multiple solvers
-
-More details will be announced when v2 is ready for preview.
+- **TTL per market** - Per-market quote expiry based on volatility
