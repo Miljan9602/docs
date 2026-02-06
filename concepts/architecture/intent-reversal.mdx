@@ -129,12 +129,16 @@ The solver creates a maker intent by:
 When the contract receives both intents, it validates the reversal:
 
 ```
-maker.inputToken == taker.outputToken    ✓
-maker.outputToken == taker.inputToken    ✓
-maker.inputAmount == taker.outputAmount  ✓
-maker.outputAmount == taker.inputAmount  ✓
-maker.counterparty == taker.signer       ✓
+maker.inputToken == taker.outputToken              ✓
+maker.outputToken == taker.inputToken              ✓
+maker.inputAmount == taker.outputAmount            ✓
+maker.outputAmount == taker.inputAmount - fee      ✓
+maker.counterparty == taker.signer                 ✓
 ```
+
+The maker's `outputAmount` must equal the taker's `inputAmount` minus the protocol fee. The fee is calculated as: `fee = taker.inputAmount * feePips / 1,000,000`
+
+This ensures the maker only receives the post-fee amount while the protocol fee is routed to the fee treasury. See [Fee Mechanics](/concepts/fee-mechanics) for details.
 
 <Note>
   The counterparty field is optional. If set to zero address, the maker's intent can be settled with any taker. This is useful for public limit orders.

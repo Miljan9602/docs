@@ -12,7 +12,7 @@ info:
     name: RFQ Protocol Team
 
 servers:
-  - url: https://api-rfq.dragonswap.app
+  - url: https://dev-rfq.saphyre.xyz
     description: RFQ Coordinator (Production)
   - url: http://localhost:3004
     description: RFQ Coordinator (Local)

@@ -214,9 +214,33 @@ The contract defines the following custom errors:
 Contract addresses can be retrieved from the `/api/v1/config` endpoint:
 
 ```bash
-curl "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+curl "https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=<CHAIN_ID>"
 ```
 
+## Contract Mutability
+
+The RFQSettlement contract has minimal mutability. The contract owner can:
+
+### `setFeeTreasury(address)`
+
+Allows the owner to update the fee treasury address. Only callable by the contract owner.
+
+```solidity
+function setFeeTreasury(address _feeTreasury) external onlyOwner
+```
+
+### `rescueTokens(address token, address to)`
+
+Allows recovering tokens accidentally sent to the contract. This is a safety function -- during normal operation, tokens flow through Permit2 and are never held by the contract.
+
+```solidity
+function rescueTokens(address token, address to) external
+```
+
+<Warning>
+  The `rescueTokens` function is NOT restricted to owner-only. Any address can call it to sweep tokens held by the contract.
+</Warning>
+
 <Note>
-  The RFQSettlement contract is immutable once deployed. Always verify the contract address via the config endpoint before interacting.
+  All other contract parameters (Permit2 address, WETH9 address) are immutable and set at deployment. Always verify the contract address via the config endpoint before interacting.
 </Note>

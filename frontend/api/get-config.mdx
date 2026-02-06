@@ -43,14 +43,14 @@ Get chain configuration including contract addresses and TTL settings.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+curl -X GET "https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=<CHAIN_ID>"
 ```
 
 ```javascript JavaScript
 const CHAIN_ID = "..."; // Your chain ID
 
 const response = await fetch(
-  `https://api-rfq.dragonswap.app/api/v1/config?chain_id=${CHAIN_ID}`
+  `https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=${CHAIN_ID}`
 );
 const data = await response.json();
 
@@ -66,7 +66,7 @@ import requests
 CHAIN_ID = "..."  # Your chain ID
 
 response = requests.get(
-    "https://api-rfq.dragonswap.app/api/v1/config",
+    "https://dev-rfq.saphyre.xyz/api/v1/config",
     params={"chain_id": CHAIN_ID}
 )
 data = response.json()
@@ -80,7 +80,7 @@ print(f"Permit2: {data['permit2_address']}")
 {
   "status": "ok",
   "chain_id": "1329",
-  "chain_name": "Sei",
+  "chain_name": "Sei Mainnet",
   "rfq_settlement_address": "0x...",
   "permit2_address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
   "min_quote_ttl_ms": 15000,

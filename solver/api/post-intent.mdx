@@ -34,8 +34,38 @@ Signs and returns the maker's (solver's) swap intent for on-chain settlement.
   <Expandable title="Intent object">
     <ParamField body="inputToken" type="string" required>Token user is selling</ParamField>
     <ParamField body="outputToken" type="string" required>Token user is buying</ParamField>
-    <ParamField body="inputAmount" type="string" required>Amount user is selling (wei)</ParamField>
+    <ParamField body="inputAmount" type="string" required>Amount user is selling in wei (post-fee: original amount minus protocol fee)</ParamField>
     <ParamField body="outputAmount" type="string" required>Amount user will receive (wei)</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="fee" type="string" required>
+  Protocol fee amount in input token wei
+</ParamField>
+
+<ParamField body="taker_data" type="object" required>
+  Taker's signed swap data for on-chain verification
+  <Expandable title="taker_data object (HTTP nested structure)">
+    <ParamField body="swap_intent" type="object" required>
+      The taker's original swap intent (pre-fee amounts)
+      <Expandable title="swap_intent fields">
+        <ParamField body="inputToken" type="string" required>Token user is selling</ParamField>
+        <ParamField body="outputToken" type="string" required>Token user is buying</ParamField>
+        <ParamField body="inputAmount" type="string" required>Original (pre-fee) input amount in wei</ParamField>
+        <ParamField body="outputAmount" type="string" required>Output amount in wei</ParamField>
+        <ParamField body="unwrap" type="boolean" required>Whether to unwrap native token</ParamField>
+        <ParamField body="frontendReferral" type="string" required>Frontend referral bytes32</ParamField>
+      </Expandable>
+    </ParamField>
+    <ParamField body="signature_params" type="object" required>
+      The taker's Permit2 signature parameters
+      <Expandable title="signature_params fields">
+        <ParamField body="deadline" type="string" required>Signature expiry timestamp</ParamField>
+        <ParamField body="nonce" type="string" required>Permit2 nonce</ParamField>
+        <ParamField body="signer" type="string" required>Taker's address</ParamField>
+        <ParamField body="signature" type="string" required>EIP-712 signature hex</ParamField>
+      </Expandable>
+    </ParamField>
   </Expandable>
 </ParamField>
 
@@ -78,14 +108,31 @@ curl -X POST "https://solver.example.com/api/v1/intent" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_auth_key" \
   -d '{
-    "quote_id": "rfq-q-...",
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
     "chain_id": "1329",
     "user_address": "0x...",
     "intent": {
       "inputToken": "0x...",
       "outputToken": "0x...",
-      "inputAmount": "1000000000000000000",
-      "outputAmount": "985000000000000000"
+      "inputAmount": "997000",
+      "outputAmount": "990000"
+    },
+    "fee": "3000",
+    "taker_data": {
+      "swap_intent": {
+        "inputToken": "0x...",
+        "outputToken": "0x...",
+        "inputAmount": "1000000",
+        "outputAmount": "990000",
+        "unwrap": false,
+        "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signature_params": {
+        "deadline": "1700000000",
+        "nonce": "12345",
+        "signer": "0x...",
+        "signature": "0x..."
+      }
     }
   }'
 ```
@@ -95,7 +142,7 @@ curl -X POST "https://solver.example.com/api/v1/intent" \
 ```json 200 - Success
 {
   "status": "ok",
-  "quote_id": "rfq-q-550e8400-e29b-41d4-a716-446655440000",
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
   "solver_address": "0xsolveraddress1234567890abcdef12345678",
   "signed_swap_intent": {
     "swap_intent": {
@@ -154,12 +201,20 @@ For WebSocket solvers, the coordinator sends a `sign_intent` message and expects
       "outputAmount": "249250000"
     },
     "taker_data": {
-      "unwrap": false,
-      "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "deadline": "1705612890",
-      "nonce": "0xabc123...",
-      "signer": "0x1234567890abcdef1234567890abcdef12345678",
-      "signature": "0x..."
+      "swap_intent": {
+        "inputToken": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+        "outputToken": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+        "inputAmount": "1000000000000000000",
+        "outputAmount": "249250000",
+        "unwrap": false,
+        "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signature_params": {
+        "deadline": "1705612890",
+        "nonce": "0xabc123...",
+        "signer": "0x1234567890abcdef1234567890abcdef12345678",
+        "signature": "0x..."
+      }
     }
   }
 }
@@ -195,7 +250,7 @@ For WebSocket solvers, the coordinator sends a `sign_intent` message and expects
 ```
 
 <Note>
-  The WSS intent request includes additional `fee` and `taker_data` fields not present in the HTTP version. The signing logic is identical. See the [WebSocket Guide](/solver/websocket-guide) for full details.
+  Both HTTP and WSS transports use the same **nested** `taker_data` structure with `taker_data.swap_intent` and `taker_data.signature_params`. The signing logic is identical across both transports. See the [WebSocket Guide](/solver/websocket-guide) for WSS format details.
 </Note>
 
 ## Intent Reversal

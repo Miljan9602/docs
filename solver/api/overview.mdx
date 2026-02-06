@@ -12,8 +12,8 @@ The RFQ Protocol exposes two sets of APIs:
 
 | Environment | URL |
 |-------------|-----|
-| Production | `https://api-rfq.dragonswap.app` |
-| Testnet | `https://testnet-api-rfq.dragonswap.app` |
+| Production | `https://dev-rfq.saphyre.xyz` |
+| Testnet | `https://testnet-dev-rfq.saphyre.xyz` |
 
 ## Authentication
 
@@ -55,7 +55,8 @@ All responses follow this structure:
 // Success
 {
   "status": "ok",
-  "data": { ... }
+  "field1": "value1",
+  "field2": "value2"
 }
 
 // Error
@@ -65,16 +66,8 @@ All responses follow this structure:
 }
 ```
 
-## Rate Limits
-
-| Endpoint | Limit |
-|----------|-------|
-| `/quote` | 100 requests/minute |
-| `/markets` | 60 requests/minute |
-| `/intent` | 30 requests/minute |
-
 <Note>
-  Contact the team if you need higher rate limits for production use.
+  Rate limiting is planned for a future release. Currently there are no enforced rate limits, but we recommend implementing client-side rate limiting to avoid overwhelming the API.
 </Note>
 
 ## Client API Endpoints
@@ -114,13 +107,13 @@ See the [WebSocket Guide](/solver/websocket-guide) for full WSS protocol details
 ### 1. Get Available Markets
 
 ```bash
-curl "https://api-rfq.dragonswap.app/api/v1/markets?chain_id=<CHAIN_ID>"
+curl "https://dev-rfq.saphyre.xyz/api/v1/markets?chain_id=<CHAIN_ID>"
 ```
 
 ### 2. Request a Quote
 
 ```bash
-curl "https://api-rfq.dragonswap.app/api/v1/quote?\
+curl "https://dev-rfq.saphyre.xyz/api/v1/quote?\
 input_token=<INPUT_TOKEN>&\
 output_token=<OUTPUT_TOKEN>&\
 amount=<AMOUNT>&\
@@ -130,10 +123,10 @@ chain_id=<CHAIN_ID>"
 ### 3. Submit Intent
 
 ```bash
-curl -X POST "https://api-rfq.dragonswap.app/api/v1/intent" \
+curl -X POST "https://dev-rfq.saphyre.xyz/api/v1/intent" \
   -H "Content-Type: application/json" \
   -d '{
-    "quote_id": "rfq-q-...",
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
     "chain_id": "<CHAIN_ID>",
     "user_address": "0x...",
     "swap_intent": { ... },

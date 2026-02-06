@@ -215,20 +215,20 @@ sequenceDiagram
 | Phase | Timeout | Notes |
 |-------|---------|-------|
 | Quote Request | 5 seconds | Coordinator waits max 5s for solver responses |
-| Quote TTL | 10-60 seconds | Depends on market volatility |
+| Quote TTL | 15-30 seconds | Depends on market volatility (default: 15s min, 30s max) |
 | Intent Submit | 10 seconds | Coordinator waits max 10s for solver signature |
 | Settlement | ~3 seconds | Depends on block time |
 
 ```
 Timeline:
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  [0s]          [5s]              [35s]            [45s]        [48s]   │
-│   │             │                  │                │            │      │
-│   ├─ Quote ────►├─── Quote Valid ─►├─ Submit ──────►├─ Settle ──►│      │
-│   │  Request    │    (30s TTL)     │  Intent        │  On-chain  │      │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  [0s]        [5s]           [20s]          [30s]        [33s]    │
+│   │           │               │              │            │       │
+│   ├─ Quote ──►├── Quote Valid►├─ Submit ────►├─ Settle ──►│       │
+│   │  Request  │   (15s TTL)   │  Intent      │  On-chain  │       │
+│                                                                    │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---

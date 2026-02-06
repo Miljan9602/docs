@@ -25,7 +25,7 @@ The RFQ Protocol supports a **WebSocket (WSS)** transport as an alternative to t
 Solvers connect **to** the RFQ Coordinator (the coordinator does not connect to you):
 
 ```
-wss://api-rfq.dragonswap.app/api/v2/solver-stream
+wss://dev-rfq.saphyre.xyz/api/v2/solver-stream
 ```
 
 All messages are **MessagePack-encoded binary WebSocket frames** (RFC 6455).
@@ -118,7 +118,7 @@ The **first message** must be an auth message within 5 seconds, or the connectio
 }
 ```
 
-Connection is closed with code `4001` after auth failure. Error code is `UNAUTHORIZED` for invalid tokens, or `INVALID_AUTH` for malformed auth messages.
+Connection is closed with code `4003` after auth failure. Error code is `UNAUTHORIZED` for invalid tokens, wrong protocol, or malformed auth messages.
 
 <Warning>
   Your solver must be registered with `protocol = 'wss'` in the coordinator's database. Contact the team to configure this.
@@ -282,12 +282,20 @@ Sent when a user submits a signed trade intent. The solver must create a counter
       "outputAmount": "249250000"
     },
     "taker_data": {
-      "unwrap": false,
-      "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "deadline": "1705612890",
-      "nonce": "0xabc123...",
-      "signer": "0x1234567890abcdef1234567890abcdef12345678",
-      "signature": "0x..."
+      "swap_intent": {
+        "inputToken": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+        "outputToken": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+        "inputAmount": "1000000000000000000",
+        "outputAmount": "249250000",
+        "unwrap": false,
+        "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signature_params": {
+        "deadline": "1705612890",
+        "nonce": "0xabc123...",
+        "signer": "0x1234567890abcdef1234567890abcdef12345678",
+        "signature": "0x..."
+      }
     }
   }
 }
@@ -301,9 +309,15 @@ Sent when a user submits a signed trade intent. The solver must create a counter
 | `fee` | string | Protocol fee in input token wei |
 | `intent.inputToken` | string | Taker's input token |
 | `intent.outputToken` | string | Taker's output token |
-| `intent.inputAmount` | string | Taker's input amount in wei (post-fee) |
+| `intent.inputAmount` | string | Taker's input amount in wei (post-fee: original amount minus protocol fee). Use this as the maker's `outputAmount`. |
 | `intent.outputAmount` | string | Taker's output amount in wei |
-| `taker_data` | object | Taker's signature data (for on-chain verification) |
+| `taker_data.swap_intent` | object | Taker's original swap intent (pre-fee amounts, for on-chain verification) |
+| `taker_data.swap_intent.inputAmount` | string | Taker's **pre-fee** input amount (the amount the user actually signed) |
+| `taker_data.signature_params` | object | Taker's Permit2 signature parameters |
+
+<Note>
+  Both WSS and HTTP transports use the same **nested** `taker_data` structure with `taker_data.swap_intent` and `taker_data.signature_params`. The `swap_intent.inputAmount` is the **pre-fee** amount the user signed, while `intent.inputAmount` is the **post-fee** amount (original minus protocol fee).
+</Note>
 
 ### Solver Logic
 
@@ -344,10 +358,11 @@ The signing logic is identical to the HTTP transport. See [Sign Intent](/solver/
 
 | Code | Name | Description |
 |------|------|-------------|
-| 4001 | AUTH_TIMEOUT / UNAUTHORIZED | Auth not received within 5s, or invalid token |
-| 4002 | STALE_CONNECTION | No pong received for 60s |
-| 4003 | TRY_AGAIN_LATER | Too many connections from the same IP |
-| 4004 | UNKNOWN_ACTION | Solver sent an unrecognized action |
+| 4001 | AUTH_TIMEOUT | Auth message not received within timeout period |
+| 4002 | STALE_CONNECTION | No pong received within heartbeat timeout |
+| 4003 | UNAUTHORIZED | Invalid auth token, wrong protocol, or malformed auth |
+| 4005 | TRY_AGAIN_LATER | Too many connections from the same IP |
+| 4006 | UNKNOWN_ACTION | Solver sent an unrecognized message action |
 | 4008 | SUPERSEDED | Same solver connected again, old connection replaced |
 
 ## Rate Limiting
@@ -371,7 +386,7 @@ Fetch contract addresses dynamically from the coordinator instead of hardcoding 
 
 **Request:**
 ```bash
-curl -X GET "https://api-rfq.dragonswap.app/api/v1/config?chain_id=1329"
+curl -X GET "https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=1329"
 ```
 
 **Response:**
@@ -393,7 +408,7 @@ Use `rfq_settlement_address` and `permit2_address` from this response when signi
 
 ```bash
 # Connection to RFQ Coordinator
-RFQ_SERVER_WS_URL=wss://api-rfq.dragonswap.app/api/v2/solver-stream
+RFQ_SERVER_WS_URL=wss://dev-rfq.saphyre.xyz/api/v2/solver-stream
 MM_AUTH_KEY=your-plain-text-auth-key
 
 # Chain (required for intent signing)
@@ -415,7 +430,7 @@ SPREAD_BPS=30  # 0.3% spread
 import WebSocket from "ws";
 import { encode, decode } from "@msgpack/msgpack";
 
-const WS_URL = "wss://api-rfq.dragonswap.app/api/v2/solver-stream";
+const WS_URL = "wss://dev-rfq.saphyre.xyz/api/v2/solver-stream";
 const AUTH_KEY = process.env.MM_AUTH_KEY;
 
 function connect() {
@@ -503,7 +518,7 @@ use serde_json::{json, Value};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let url = "wss://api-rfq.dragonswap.app/api/v2/solver-stream";
+    let url = "wss://dev-rfq.saphyre.xyz/api/v2/solver-stream";
     let (ws, _) = connect_async(url).await?;
     let (mut tx, mut rx) = ws.split();
 

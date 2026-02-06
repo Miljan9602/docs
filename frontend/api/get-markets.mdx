@@ -37,14 +37,14 @@ Get the list of available trading pairs.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api-rfq.dragonswap.app/api/v1/markets?chain_id=<CHAIN_ID>"
+curl -X GET "https://dev-rfq.saphyre.xyz/api/v1/markets?chain_id=<CHAIN_ID>"
 ```
 
 ```javascript JavaScript
 const CHAIN_ID = "..."; // Your chain ID
 
 const response = await fetch(
-  `https://api-rfq.dragonswap.app/api/v1/markets?chain_id=${CHAIN_ID}`
+  `https://dev-rfq.saphyre.xyz/api/v1/markets?chain_id=${CHAIN_ID}`
 );
 const data = await response.json();
 console.log(data.markets);
@@ -56,7 +56,7 @@ import requests
 CHAIN_ID = "..."  # Your chain ID
 
 response = requests.get(
-    "https://api-rfq.dragonswap.app/api/v1/markets",
+    "https://dev-rfq.saphyre.xyz/api/v1/markets",
     params={"chain_id": CHAIN_ID}
 )
 data = response.json()

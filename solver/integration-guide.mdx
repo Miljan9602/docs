@@ -80,27 +80,43 @@ Signs the maker's reversed intent for settlement.
 **Request:**
 ```json
 {
-  "quote_id": "rfq-q-...",
-  "chain_id": "...",
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+  "chain_id": "1329",
   "user_address": "0x...",
   "intent": {
+    "inputToken": "0x...",
+    "outputToken": "0x...",
+    "inputAmount": "997000",
+    "outputAmount": "990000"
+  },
+  "fee": "3000",
+  "taker_data": {
     "swap_intent": {
       "inputToken": "0x...",
       "outputToken": "0x...",
-      "inputAmount": "...",
-      "outputAmount": "...",
+      "inputAmount": "1000000",
+      "outputAmount": "990000",
       "unwrap": false,
       "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
     },
     "signature_params": {
-      "deadline": "...",
-      "nonce": "...",
+      "deadline": "1700000000",
+      "nonce": "12345",
       "signer": "0x...",
       "signature": "0x..."
     }
   }
 }
 ```
+
+**Key fields:**
+- `intent.inputAmount` is the **post-fee** amount (original user amount minus protocol fee). This is what the solver should use as the maker's `outputAmount`.
+- `taker_data.swap_intent.inputAmount` is the **original (pre-fee)** amount that the user signed.
+- `fee` is the protocol fee in input token wei.
+
+<Note>
+  Both HTTP and WSS transports use the same **nested** `taker_data` structure with `taker_data.swap_intent` and `taker_data.signature_params`. See the [WebSocket Guide](/solver/websocket-guide) for WSS format details.
+</Note>
 
 See [API Reference](/solver/api/post-intent) for full details.
 
@@ -140,19 +156,17 @@ The probability of collision is negligible (1 in 2^256). Do not try to fetch a "
 Get the Permit2 and RFQSettlement contract addresses from the config endpoint:
 
 ```bash
-curl "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+curl "https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=<CHAIN_ID>"
 ```
 
 Response:
 ```json
 {
   "status": "ok",
-  "data": {
-    "chain_id": "...",
-    "chain_name": "...",
-    "rfq_settlement_address": "0x...",
-    "permit2_address": "0x..."
-  }
+  "chain_id": "...",
+  "chain_name": "...",
+  "rfq_settlement_address": "0x...",
+  "permit2_address": "0x..."
 }
 ```
 

@@ -1,0 +1,359 @@
+---
+title: "EIP-712 Signing Specification"
+description: "Complete typed data specification for signing swap intents"
+---
+
+## Overview
+
+The RFQ Protocol uses [EIP-712](https://eips.ethereum.org/EIPS/eip-712) typed data signing via [Permit2](https://github.com/Uniswap/permit2) for gasless token approvals. Both the taker (user) and maker (solver) sign structured data that is verified on-chain during settlement.
+
+This page provides the complete specification so integrators using any language or framework can implement signing without the SDK.
+
+## Permit2 Domain
+
+All signatures use the Permit2 contract as the verifying contract:
+
+```json
+{
+  "name": "Permit2",
+  "chainId": 1329,
+  "verifyingContract": "0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98"
+}
+```
+
+<Note>
+The Permit2 address on Sei Mainnet (chain 1329) is `0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98`. Retrieve it dynamically via `GET /api/v1/config?chain_id=1329`.
+</Note>
+
+## Taker (User) Signing
+
+### Typed Data Structure
+
+The taker signs a `PermitWitnessTransferFrom` message with a `TakerSwapIntent` witness:
+
+**Primary Type:** `PermitWitnessTransferFrom`
+
+```json
+{
+  "types": {
+    "PermitWitnessTransferFrom": [
+      { "name": "permitted", "type": "TokenPermissions" },
+      { "name": "spender", "type": "address" },
+      { "name": "nonce", "type": "uint256" },
+      { "name": "deadline", "type": "uint256" },
+      { "name": "witness", "type": "TakerSwapIntent" }
+    ],
+    "TokenPermissions": [
+      { "name": "token", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "TakerSwapIntent": [
+      { "name": "inputToken", "type": "address" },
+      { "name": "outputToken", "type": "address" },
+      { "name": "inputAmount", "type": "uint256" },
+      { "name": "outputAmount", "type": "uint256" },
+      { "name": "unwrap", "type": "bool" },
+      { "name": "frontendReferral", "type": "bytes32" }
+    ]
+  }
+}
+```
+
+### Message Values
+
+```json
+{
+  "permitted": {
+    "token": "<input_token_address>",
+    "amount": "<amount_in from quote response>"
+  },
+  "spender": "<rfq_settlement_address from /api/v1/config>",
+  "nonce": "<random 256-bit value>",
+  "deadline": "<unix timestamp, must be in the future>",
+  "witness": {
+    "inputToken": "<input_token_address>",
+    "outputToken": "<output_token_address>",
+    "inputAmount": "<amount_in from quote response>",
+    "outputAmount": "<amount_out from quote response>",
+    "unwrap": false,
+    "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}
+```
+
+<Warning>
+The `inputAmount` in the witness MUST match `amount_in` from the quote response (the fee-inclusive amount). The protocol fee is deducted on-chain during settlement.
+</Warning>
+
+### Field Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `permitted.token` | address | The input token being sold |
+| `permitted.amount` | uint256 | Must equal `amount_in` from the quote |
+| `spender` | address | The RFQ Settlement contract address |
+| `nonce` | uint256 | Random unique value (use `crypto.randomBytes(32)`) |
+| `deadline` | uint256 | Unix timestamp after which the signature expires |
+| `witness.inputToken` | address | Same as `permitted.token` |
+| `witness.outputToken` | address | The token being purchased |
+| `witness.inputAmount` | uint256 | Must equal `amount_in` from the quote |
+| `witness.outputAmount` | uint256 | Must equal `amount_out` from the quote |
+| `witness.unwrap` | bool | Set `true` only if output token is wrapped native token (WSEI) and you want to receive native SEI |
+| `witness.frontendReferral` | bytes32 | Your registered referral identifier, or zero bytes |
+
+### Return Values
+
+After signing, submit the following to `POST /api/v1/intent`:
+
+```json
+{
+  "quote_id": "<from quote response>",
+  "chain_id": "1329",
+  "user_address": "<signer address>",
+  "swap_intent": {
+    "inputToken": "<witness.inputToken>",
+    "outputToken": "<witness.outputToken>",
+    "inputAmount": "<witness.inputAmount as string>",
+    "outputAmount": "<witness.outputAmount as string>",
+    "unwrap": false,
+    "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "signature_params": {
+    "deadline": "<deadline as string>",
+    "nonce": "<nonce as string>",
+    "signer": "<signer address>",
+    "signature": "<EIP-712 signature hex>"
+  }
+}
+```
+
+## Maker (Solver) Signing
+
+### Typed Data Structure
+
+The maker signs a `PermitWitnessTransferFrom` message with a `MakerSwapIntent` witness:
+
+**Primary Type:** `PermitWitnessTransferFrom`
+
+```json
+{
+  "types": {
+    "PermitWitnessTransferFrom": [
+      { "name": "permitted", "type": "TokenPermissions" },
+      { "name": "spender", "type": "address" },
+      { "name": "nonce", "type": "uint256" },
+      { "name": "deadline", "type": "uint256" },
+      { "name": "witness", "type": "MakerSwapIntent" }
+    ],
+    "TokenPermissions": [
+      { "name": "token", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "MakerSwapIntent": [
+      { "name": "counterparty", "type": "address" },
+      { "name": "inputToken", "type": "address" },
+      { "name": "outputToken", "type": "address" },
+      { "name": "inputAmount", "type": "uint256" },
+      { "name": "outputAmount", "type": "uint256" },
+      { "name": "unwrap", "type": "bool" }
+    ]
+  }
+}
+```
+
+### Intent Reversal
+
+The maker's intent is the **reverse** of the taker's intent, with fee adjustment:
+
+| Maker Field | Value |
+|-------------|-------|
+| `counterparty` | Taker's address (or `address(0)` for any counterparty) |
+| `inputToken` | Taker's `outputToken` |
+| `outputToken` | Taker's `inputToken` |
+| `inputAmount` | Taker's `outputAmount` |
+| `outputAmount` | Taker's `inputAmount - fee` (post-fee amount) |
+| `unwrap` | Whether to unwrap the maker's output token |
+
+<Note>
+The `outputAmount` for the maker equals the taker's `inputAmount` minus the protocol fee. The coordinator provides this as `intent.inputAmount` in the signing request (already fee-adjusted).
+</Note>
+
+## Nonce Strategy
+
+Permit2 uses 256-bit nonces. Each nonce can only be used once per token-spender pair. The recommended approach is to generate a random nonce:
+
+```typescript
+// JavaScript/TypeScript
+const nonce = BigInt('0x' + crypto.randomBytes(32).toString('hex'));
+
+// Python
+import secrets
+nonce = secrets.randbits(256)
+```
+
+## Example: Complete Signing Flow (TypeScript with viem)
+
+```typescript
+import { createWalletClient, custom } from 'viem';
+import { sei } from 'viem/chains';
+
+// 1. Get config
+const configResponse = await fetch('https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=1329');
+const config = await configResponse.json();
+const PERMIT2 = config.permit2_address;
+const RFQ_SETTLEMENT = config.rfq_settlement_address;
+
+// 2. Get quote
+const quote = await fetch('https://dev-rfq.saphyre.xyz/api/v1/quote?...').then(r => r.json());
+
+// 3. Build typed data
+const domain = {
+  name: 'Permit2',
+  chainId: 1329,
+  verifyingContract: PERMIT2,
+};
+
+const types = {
+  PermitWitnessTransferFrom: [
+    { name: 'permitted', type: 'TokenPermissions' },
+    { name: 'spender', type: 'address' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'witness', type: 'TakerSwapIntent' },
+  ],
+  TokenPermissions: [
+    { name: 'token', type: 'address' },
+    { name: 'amount', type: 'uint256' },
+  ],
+  TakerSwapIntent: [
+    { name: 'inputToken', type: 'address' },
+    { name: 'outputToken', type: 'address' },
+    { name: 'inputAmount', type: 'uint256' },
+    { name: 'outputAmount', type: 'uint256' },
+    { name: 'unwrap', type: 'bool' },
+    { name: 'frontendReferral', type: 'bytes32' },
+  ],
+};
+
+const nonce = BigInt('0x' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''));
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 minutes
+
+const message = {
+  permitted: {
+    token: quote.input_token,
+    amount: BigInt(quote.amount_in),
+  },
+  spender: RFQ_SETTLEMENT,
+  nonce,
+  deadline,
+  witness: {
+    inputToken: quote.input_token,
+    outputToken: quote.output_token,
+    inputAmount: BigInt(quote.amount_in),
+    outputAmount: BigInt(quote.amount_out),
+    unwrap: false,
+    frontendReferral: '0x0000000000000000000000000000000000000000000000000000000000000000',
+  },
+};
+
+// 4. Sign
+const walletClient = createWalletClient({ chain: sei, transport: custom(window.ethereum) });
+const [account] = await walletClient.getAddresses();
+const signature = await walletClient.signTypedData({
+  account,
+  domain,
+  types,
+  primaryType: 'PermitWitnessTransferFrom',
+  message,
+});
+
+// 5. Submit intent
+const result = await fetch('https://dev-rfq.saphyre.xyz/api/v1/intent', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    quote_id: quote.quote_id,
+    chain_id: '1329',
+    user_address: account,
+    swap_intent: {
+      inputToken: quote.input_token,
+      outputToken: quote.output_token,
+      inputAmount: quote.amount_in,
+      outputAmount: quote.amount_out,
+      unwrap: false,
+      frontendReferral: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    },
+    signature_params: {
+      deadline: deadline.toString(),
+      nonce: nonce.toString(),
+      signer: account,
+      signature,
+    },
+  }),
+}).then(r => r.json());
+```
+
+## Example: Python
+
+```python
+from eth_account import Account
+from eth_account.messages import encode_typed_data
+import secrets
+import time
+
+# Build the typed data (same structure as above)
+typed_data = {
+    "types": {
+        "EIP712Domain": [
+            {"name": "name", "type": "string"},
+            {"name": "chainId", "type": "uint256"},
+            {"name": "verifyingContract", "type": "address"},
+        ],
+        "PermitWitnessTransferFrom": [
+            {"name": "permitted", "type": "TokenPermissions"},
+            {"name": "spender", "type": "address"},
+            {"name": "nonce", "type": "uint256"},
+            {"name": "deadline", "type": "uint256"},
+            {"name": "witness", "type": "TakerSwapIntent"},
+        ],
+        "TokenPermissions": [
+            {"name": "token", "type": "address"},
+            {"name": "amount", "type": "uint256"},
+        ],
+        "TakerSwapIntent": [
+            {"name": "inputToken", "type": "address"},
+            {"name": "outputToken", "type": "address"},
+            {"name": "inputAmount", "type": "uint256"},
+            {"name": "outputAmount", "type": "uint256"},
+            {"name": "unwrap", "type": "bool"},
+            {"name": "frontendReferral", "type": "bytes32"},
+        ],
+    },
+    "primaryType": "PermitWitnessTransferFrom",
+    "domain": {
+        "name": "Permit2",
+        "chainId": 1329,
+        "verifyingContract": "0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98",
+    },
+    "message": {
+        "permitted": {
+            "token": input_token,
+            "amount": int(amount_in),
+        },
+        "spender": rfq_settlement_address,
+        "nonce": secrets.randbits(256),
+        "deadline": int(time.time()) + 300,
+        "witness": {
+            "inputToken": input_token,
+            "outputToken": output_token,
+            "inputAmount": int(amount_in),
+            "outputAmount": int(amount_out),
+            "unwrap": False,
+            "frontendReferral": bytes(32),
+        },
+    },
+}
+
+signed = Account.sign_typed_data(private_key, typed_data)
+signature = signed.signature.hex()
+```

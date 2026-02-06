@@ -49,25 +49,27 @@ sequenceDiagram
 Fetch chain configuration from the coordinator:
 
 ```bash
-curl "https://api-rfq.dragonswap.app/api/v1/config?chain_id=<CHAIN_ID>"
+curl "https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=<CHAIN_ID>"
 ```
 
 Response:
 ```json
 {
   "status": "ok",
-  "data": {
-    "chain_id": "...",
-    "chain_name": "...",
-    "rfq_settlement_address": "0x...",
-    "permit2_address": "0x...",
-    "min_quote_ttl_ms": 15000,
-    "max_quote_ttl_ms": 30000
-  }
+  "chain_id": "...",
+  "chain_name": "...",
+  "rfq_settlement_address": "0x...",
+  "permit2_address": "0x...",
+  "min_quote_ttl_ms": 15000,
+  "max_quote_ttl_ms": 30000
 }
 ```
 
 Use these addresses in your integration. Do not hardcode contract addresses.
+
+<Info>
+  Request bodies are limited to 10KB.
+</Info>
 
 ## Integration Flow
 
@@ -112,16 +114,44 @@ Have the user sign an EIP-712 typed message. The signed data includes:
 - `deadline` - Signature expiry timestamp
 - `nonce` - Random 256-bit integer
 
+The `signTakerSwapIntent` function returns an object with two fields:
+
+- `signatureParams` -- Contains `deadline`, `nonce`, `signer`, and `signature`
+- `takerSwapIntent` -- Contains `inputToken`, `outputToken`, `inputAmount`, `outputAmount`, `unwrap`, and `frontendReferral`
+
+```javascript
+const signedIntent = await signTakerSwapIntent(
+  account, deadline, nonce, takerSwapIntent, RFQ_SETTLEMENT_ADDRESS, CHAIN_ID
+);
+
+// signedIntent.signatureParams = { deadline, nonce, signer, signature }
+// signedIntent.takerSwapIntent = { inputToken, outputToken, inputAmount, outputAmount, unwrap, frontendReferral }
+```
+
+See the [EIP-712 Signing Specification](/concepts/eip712-signing) for the complete typed data structure if you need to implement signing without the SDK.
+
 ### 5. Submit the Intent
 
 ```bash
 POST /api/v1/intent
 {
-  "quote_id": "rfq-q-...",
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
   "chain_id": "<CHAIN_ID>",
   "user_address": "0x...",
-  "swap_intent": { ... },
-  "signature_params": { ... }
+  "swap_intent": {
+    "inputToken": "0x...",
+    "outputToken": "0x...",
+    "inputAmount": "1000000",
+    "outputAmount": "990000",
+    "unwrap": false,
+    "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "signature_params": {
+    "deadline": "1700000000",
+    "nonce": "12345",
+    "signer": "0x...",
+    "signature": "0x..."
+  }
 }
 ```
 
@@ -145,13 +175,11 @@ nonce = random 256-bit integer
 
 ### Frontend Referral
 
-The `frontendReferral` field is **bytes32**, not an address. Use:
+The `frontendReferral` field is **bytes32**, not an address. Use a zero-bytes value (`0x0000000000000000000000000000000000000000000000000000000000000000`) if you don't have a registered referral address. Contact team@saphyre.xyz to register a frontend referral identifier.
 
-```
-frontendReferral = toHex('your-frontend-id', { size: 32 })
-```
+### Unwrap
 
-Contact the RFQ Protocol team to register your referral identifier.
+Set `unwrap: true` only when the output token is the chain's native wrapped token (e.g., WSEI/WETH). When true, the settlement contract will unwrap the token to native currency before sending to the taker. Set to `false` for all other tokens.
 
 ## Best Practices
 

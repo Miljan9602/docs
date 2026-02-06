@@ -100,6 +100,30 @@ For multiple validation errors, messages are comma-separated:
 |------|------|-------------|------------|
 | `INTERNAL_ERROR` | 500 | Internal server error | Retry or contact support |
 
+### Signature Errors (400)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `VALIDATION_SIGNATURE_MISMATCH` | 400 | The provided signature does not match the expected typed data | Verify EIP-712 signing matches the expected domain, types, and values |
+
+### Conflict Errors (409)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `QUOTE_ALREADY_PROCESSING` | 409 | The quote is already being settled -- do not retry immediately | Wait for the current settlement to complete before resubmitting |
+
+### Settlement Errors (500)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `INTENT_SETTLEMENT_FAILED` | 500 | On-chain settlement transaction failed | Check token balances, allowances, and quote validity, then retry |
+
+### Authentication Errors (401)
+
+| Code | HTTP | Description | Resolution |
+|------|------|-------------|------------|
+| `AUTH_UNAUTHORIZED` | 401 | Authentication failed -- invalid or missing auth token | Provide a valid authentication token in the request header |
+
 ## Handling Errors
 
 ### TypeScript Example

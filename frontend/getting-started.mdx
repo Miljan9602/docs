@@ -18,14 +18,14 @@ First, let's see what trading pairs are available:
 <CodeGroup>
 
 ```bash curl
-curl -X GET "https://api-rfq.dragonswap.app/api/v1/markets?chain_id=<CHAIN_ID>"
+curl -X GET "https://dev-rfq.saphyre.xyz/api/v1/markets?chain_id=<CHAIN_ID>"
 ```
 
 ```javascript JavaScript
 const CHAIN_ID = "..."; // Your chain ID
 
 const response = await fetch(
-  `https://api-rfq.dragonswap.app/api/v1/markets?chain_id=${CHAIN_ID}`
+  `https://dev-rfq.saphyre.xyz/api/v1/markets?chain_id=${CHAIN_ID}`
 );
 const data = await response.json();
 console.log(data);
@@ -37,7 +37,7 @@ import requests
 CHAIN_ID = "..."  # Your chain ID
 
 response = requests.get(
-    "https://api-rfq.dragonswap.app/api/v1/markets",
+    "https://dev-rfq.saphyre.xyz/api/v1/markets",
     params={"chain_id": CHAIN_ID}
 )
 print(response.json())
@@ -68,7 +68,7 @@ Now let's get a quote for a token swap:
 <CodeGroup>
 
 ```bash curl
-curl -X GET "https://api-rfq.dragonswap.app/api/v1/quote?\
+curl -X GET "https://dev-rfq.saphyre.xyz/api/v1/quote?\
 input_token=<INPUT_TOKEN>&\
 output_token=<OUTPUT_TOKEN>&\
 amount=<AMOUNT>&\
@@ -84,7 +84,7 @@ const params = new URLSearchParams({
 });
 
 const response = await fetch(
-  `https://api-rfq.dragonswap.app/api/v1/quote?${params}`
+  `https://dev-rfq.saphyre.xyz/api/v1/quote?${params}`
 );
 const quote = await response.json();
 console.log(quote);
@@ -94,7 +94,7 @@ console.log(quote);
 import requests
 
 response = requests.get(
-    "https://api-rfq.dragonswap.app/api/v1/quote",
+    "https://dev-rfq.saphyre.xyz/api/v1/quote",
     params={
         "input_token": INPUT_TOKEN,
         "output_token": OUTPUT_TOKEN,
@@ -112,20 +112,18 @@ print(response.json())
 ```json
 {
   "status": "ok",
-  "data": {
-    "quote_id": "rfq-q-550e8400-e29b-41d4-a716-446655440000",
-    "input_token": "0x...",
-    "output_token": "0x...",
-    "amount_in": "1000000000",
-    "amount_out": "498500000000000000",
-    "expiry": 1705612830000,
-    "chain_id": "..."
-  }
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+  "input_token": "0x...",
+  "output_token": "0x...",
+  "amount_in": "1000000000",
+  "amount_out": "498500000000000000",
+  "expiry": 1705612830000,
+  "chain_id": "..."
 }
 ```
 
 <Note>
-  Quotes have a TTL (time-to-live) that varies by market volatility (15-30 seconds). After expiry, you'll need to request a new quote.
+  Quotes have a configurable TTL (default 15 seconds). Use the `expiry` timestamp in the response to determine when the quote expires. After expiry, you'll need to request a new quote.
 </Note>
 
 ## Step 3: Execute the Swap
@@ -144,9 +142,9 @@ If you haven't already, approve the Permit2 contract to spend your tokens:
 import { parseUnits, maxUint256 } from "viem";
 
 // Get Permit2 address from /api/v1/config endpoint
-const config = await fetch(`https://api-rfq.dragonswap.app/api/v1/config?chain_id=${CHAIN_ID}`);
-const { data } = await config.json();
-const PERMIT2_ADDRESS = data.permit2_address;
+const configResponse = await fetch(`https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=${CHAIN_ID}`);
+const config = await configResponse.json();
+const PERMIT2_ADDRESS = config.permit2_address;
 
 // Approve Permit2 to spend your tokens
 const tx = await walletClient.writeContract({
@@ -181,6 +179,12 @@ const signedIntent = await signTakerSwapIntent(
   RFQ_SETTLEMENT_ADDRESS, // from /api/v1/config
   CHAIN_ID
 );
+
+// signedIntent has the shape:
+// {
+//   signatureParams: { deadline, nonce, signer, signature },
+//   takerSwapIntent: { inputToken, outputToken, inputAmount, outputAmount, unwrap, frontendReferral }
+// }
 ```
 
 ### 3.3 Submit the Intent
@@ -188,7 +192,7 @@ const signedIntent = await signTakerSwapIntent(
 <CodeGroup>
 
 ```bash curl
-curl -X POST "https://api-rfq.dragonswap.app/api/v1/intent" \
+curl -X POST "https://dev-rfq.saphyre.xyz/api/v1/intent" \
   -H "Content-Type: application/json" \
   -d '{
     "quote_id": "<QUOTE_ID>",
@@ -212,7 +216,7 @@ curl -X POST "https://api-rfq.dragonswap.app/api/v1/intent" \
 ```
 
 ```javascript JavaScript
-const response = await fetch("https://api-rfq.dragonswap.app/api/v1/intent", {
+const response = await fetch("https://dev-rfq.saphyre.xyz/api/v1/intent", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

@@ -30,7 +30,7 @@ Get the best available quote for a specific token swap.
 </ResponseField>
 
 <ResponseField name="quote_id" type="string">
-  Unique quote identifier (format: `rfq-q-{uuid}`)
+  Unique quote identifier (UUID format)
 </ResponseField>
 
 <ResponseField name="input_token" type="string">
@@ -63,7 +63,7 @@ Get the best available quote for a specific token swap.
 
 <RequestExample>
 ```bash cURL
-curl -X GET "https://api-rfq.dragonswap.app/api/v1/quote?\
+curl -X GET "https://dev-rfq.saphyre.xyz/api/v1/quote?\
 input_token=<INPUT_TOKEN>&\
 output_token=<OUTPUT_TOKEN>&\
 amount=<AMOUNT>&\
@@ -79,7 +79,7 @@ const params = new URLSearchParams({
 });
 
 const response = await fetch(
-  `https://api-rfq.dragonswap.app/api/v1/quote?${params}`
+  `https://dev-rfq.saphyre.xyz/api/v1/quote?${params}`
 );
 const data = await response.json();
 
@@ -95,7 +95,7 @@ if (data.status === "ok") {
 import requests
 
 response = requests.get(
-    "https://api-rfq.dragonswap.app/api/v1/quote",
+    "https://dev-rfq.saphyre.xyz/api/v1/quote",
     params={
         "input_token": INPUT_TOKEN,
         "output_token": OUTPUT_TOKEN,
@@ -112,7 +112,7 @@ print(f"Quote: {data['amount_out']} output tokens, Fee: {data['fee']}")
 ```json 200 - Success
 {
   "status": "ok",
-  "quote_id": "rfq-q-550e8400-e29b-41d4-a716-446655440000",
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
   "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
   "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
   "amount_in": "1000000000000000000",
@@ -139,18 +139,18 @@ print(f"Quote: {data['amount_out']} output tokens, Fee: {data['fee']}")
 }
 ```
 
-```json 404 - Market Not Found
+```json 404 - No Market Makers
 {
   "status": "error",
-  "error": "Market not found for this pair",
-  "code": "MARKET_NOT_FOUND"
+  "error": "No market makers support this trading pair",
+  "code": "MARKET_NO_MAKERS"
 }
 ```
 
 ```json 503 - No Quotes Available
 {
   "status": "error",
-  "error": "Unable to get quote at this time",
+  "error": "Unable to get quote from market makers",
   "code": "QUOTE_UNAVAILABLE"
 }
 ```
@@ -158,9 +158,7 @@ print(f"Quote: {data['amount_out']} output tokens, Fee: {data['fee']}")
 
 ## Notes
 
-- Quote TTL varies by market volatility (15-30 seconds):
-  - Volatile pairs (ETH/USDC): ~15 seconds
-  - Stable pairs (USDC/USDT): ~30 seconds
+- The quote TTL is configurable per market (default 15 seconds)
 - The `quote_id` is required when submitting an intent
 - Always check the `expiry` field before submitting - expired quotes will be rejected
 - Amount values are always in wei (base units of the token)

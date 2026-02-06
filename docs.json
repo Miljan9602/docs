@@ -34,6 +34,8 @@
             "group": "Concepts",
             "pages": [
               "concepts/error-codes",
+              "concepts/fee-mechanics",
+              "concepts/eip712-signing",
               "concepts/ttl-per-market",
               "concepts/permit2",
               "concepts/versioning"
@@ -94,7 +96,7 @@
     ]
   },
   "api": {
-    "baseUrl": "https://api-rfq.dragonswap.app",
+    "baseUrl": "https://dev-rfq.saphyre.xyz",
     "playground": {
       "mode": "show"
     }
