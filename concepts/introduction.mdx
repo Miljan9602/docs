@@ -5,11 +5,11 @@ description: "RFQ Protocol - Better pricing, zero slippage, and MEV protection"
 
 # Welcome to RFQ Protocol
 
-RFQ Protocol enables **gasless, atomic token swaps** by sourcing fixed quotes from professional market makers—delivering better pricing, zero slippage, and MEV protection.
+RFQ Protocol enables **gasless, atomic token swaps** by sourcing fixed quotes from professional solvers—delivering better pricing, zero slippage, and MEV protection.
 
 ## What is RFQ?
 
-RFQ (Request for Quote) is a trading model where users request fixed prices from professional market makers and execute the trade only after explicitly accepting the quote. It enables better pricing, zero slippage, and MEV protection, especially for large or illiquid trades.
+RFQ (Request for Quote) is a trading model where users request fixed prices from professional solvers and execute the trade only after explicitly accepting the quote. It enables better pricing, zero slippage, and MEV protection, especially for large or illiquid trades.
 
 ```mermaid
 graph LR
@@ -62,7 +62,7 @@ The RFQ system consists of three main components:
 | Component | Description |
 |-----------|-------------|
 | **RFQ Coordinator** | Off-chain coordinator that aggregates quotes from solvers |
-| **Solver** | Market maker that provides quotes and liquidity |
+| **Solver** | Provides quotes and liquidity |
 | **RFQSettlement** | Smart contract that executes atomic swaps on-chain |
 
 <Note>
@@ -86,6 +86,6 @@ RFQ Protocol is EVM-compatible and can be deployed on any EVM chain. See the [co
     Learn how to integrate RFQ in your app
   </Card>
   <Card title="Become a Solver" icon="server" href="/solver/getting-started">
-    Run your own market maker
+    Run your own solver
   </Card>
 </CardGroup>

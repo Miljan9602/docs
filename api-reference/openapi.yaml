@@ -6,7 +6,7 @@ info:
 
     The RFQ system consists of two components:
     - **RFQ Coordinator**: Off-chain coordinator that aggregates quotes from solvers
-    - **Solver**: Market maker that provides quotes and liquidity
+    - **Solver**: Provides quotes and liquidity
   version: 1.0.0
   contact:
     name: RFQ Protocol Team
@@ -68,7 +68,7 @@ paths:
                 chain_id: "1329"
                 chain_name: "Sei"
                 rfq_settlement_address: "0x..."
-                permit2_address: "0x000000000022d473030f116ddee9f6b43ac78ba3"
+                permit2_address: "0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98"
                 min_quote_ttl_ms: 15000
                 max_quote_ttl_ms: 30000
         "400":
@@ -96,7 +96,7 @@ paths:
       tags:
         - Coordinator - Markets
       summary: Get available markets
-      description: Returns all available trading pairs aggregated from registered market makers
+      description: Returns all available trading pairs aggregated from registered solvers
       operationId: getMarkets
       parameters:
         - name: chain_id
@@ -136,7 +136,7 @@ paths:
         - Coordinator - Quote
       summary: Get best quote
       description: |
-        Queries all registered market makers in parallel and returns the best quote.
+        Queries all registered solvers in parallel and returns the best quote.
         Quotes have a TTL that varies by market volatility (15-30 seconds).
       operationId: getQuote
       parameters:
@@ -169,7 +169,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Best quote from market makers
+          description: Best quote from solvers
           content:
             application/json:
               schema:
@@ -211,7 +211,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: "error"
-                error: "No market makers support this pair"
+                error: "No solvers support this pair"
                 code: "MARKET_NO_MAKERS"
         "429":
           description: Rate limit exceeded
@@ -231,7 +231,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: "error"
-                error: "Unable to get quote from market makers"
+                error: "Unable to get quote from solvers"
                 code: "QUOTE_UNAVAILABLE"
 
   /api/v1/intent:

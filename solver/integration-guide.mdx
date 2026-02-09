@@ -1,9 +1,9 @@
 ---
 title: "Integrate as a Solver"
-description: "Guide to becoming an RFQ Protocol market maker"
+description: "Guide to becoming an RFQ Protocol solver"
 ---
 
-This guide explains how to set up a solver (market maker) that provides liquidity to the RFQ Protocol.
+This guide explains how to set up a solver that provides liquidity to the RFQ Protocol.
 
 ## Overview
 
@@ -89,7 +89,6 @@ Signs the maker's reversed intent for settlement.
     "inputAmount": "997000",
     "outputAmount": "990000"
   },
-  "fee": "3000",
   "taker_data": {
     "swap_intent": {
       "inputToken": "0x...",
@@ -110,9 +109,8 @@ Signs the maker's reversed intent for settlement.
 ```
 
 **Key fields:**
-- `intent.inputAmount` is the **post-fee** amount (original user amount minus protocol fee). This is what the solver should use as the maker's `outputAmount`.
-- `taker_data.swap_intent.inputAmount` is the **original (pre-fee)** amount that the user signed.
-- `fee` is the protocol fee in input token wei.
+- `intent.inputAmount` is the net amount after protocol fee deduction. This is what the solver should use as the maker's `outputAmount`.
+- `taker_data.swap_intent.inputAmount` is the original amount that the user signed.
 
 <Note>
   Both HTTP and WSS transports use the same **nested** `taker_data` structure with `taker_data.swap_intent` and `taker_data.signature_params`. See the [WebSocket Guide](/solver/websocket-guide) for WSS format details.
@@ -199,6 +197,10 @@ ERC20.approve(permit2_address, max_uint256)
 
   <Accordion title="Rate Limiting">
     Implement rate limiting to prevent abuse.
+  </Accordion>
+
+  <Accordion title="Market Freshness">
+    Solvers must keep their market data fresh. If the coordinator does not receive updated market data from your solver within the configured freshness window, your markets will be considered stale and you will stop receiving quote requests until markets are refreshed. For WSS solvers, this happens automatically via periodic `get_markets` messages. For HTTP solvers, ensure your `/api/v1/markets` endpoint is responsive.
   </Accordion>
 </AccordionGroup>
 

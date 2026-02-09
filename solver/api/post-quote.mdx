@@ -37,6 +37,10 @@ Returns a price quote for a specific token swap request.
   Unix timestamp (milliseconds) for quote expiry.
 </ParamField>
 
+<ParamField body="quote_id" type="string" required>
+  Coordinator-generated UUID. Echo this back in your response.
+</ParamField>
+
 ## Response
 
 <ResponseField name="status" type="string">
@@ -77,6 +81,7 @@ curl -X POST "https://solver.example.com/api/v1/quote" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_auth_key" \
   -d '{
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
     "input_token": "0x...",
     "output_token": "0x...",
     "amount": "1000000000",

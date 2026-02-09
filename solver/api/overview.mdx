@@ -6,7 +6,7 @@ description: "Introduction to the RFQ Protocol API"
 The RFQ Protocol exposes two sets of APIs:
 
 1. **Client API** - For frontends and integrators to request quotes and execute swaps
-2. **Solver API** - For market makers to provide liquidity
+2. **Solver API** - For solvers to provide liquidity
 
 ## Base URLs
 
@@ -35,7 +35,7 @@ Contact the RFQ Protocol team to obtain your auth key.
 |---------|--------|----------|
 | **v1** | Live | REST API + WebSocket (WSS), full fills only |
 
-HTTP endpoints are prefixed with `/api/v1/`. WebSocket solvers connect to `/api/v2/solver-stream`.
+HTTP endpoints are prefixed with `/api/v1/`. WebSocket solvers connect to `/api/v1/solver-stream`.
 
 <Note>
   The solver API endpoints below describe the HTTP (REST) protocol. For WebSocket integration, see the [WebSocket Guide](/solver/websocket-guide).
@@ -84,7 +84,7 @@ For frontends and integrators:
 
 ## Solver API Endpoints
 
-For market makers (HTTP transport):
+For solvers (HTTP transport):
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -92,7 +92,7 @@ For market makers (HTTP transport):
 | POST | `/api/v1/quote` | Provide a quote |
 | POST | `/api/v1/intent` | Sign maker intent |
 
-For market makers (WSS transport):
+For solvers (WSS transport):
 
 | Action | Response Action | Description |
 |--------|-----------------|-------------|

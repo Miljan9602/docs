@@ -139,10 +139,10 @@ print(f"Quote: {data['amount_out']} output tokens, Fee: {data['fee']}")
 }
 ```
 
-```json 404 - No Market Makers
+```json 404 - No Solvers
 {
   "status": "error",
-  "error": "No market makers support this trading pair",
+  "error": "No solvers support this trading pair",
   "code": "MARKET_NO_MAKERS"
 }
 ```
@@ -150,7 +150,7 @@ print(f"Quote: {data['amount_out']} output tokens, Fee: {data['fee']}")
 ```json 503 - No Quotes Available
 {
   "status": "error",
-  "error": "Unable to get quote from market makers",
+  "error": "Unable to get quote from solvers",
   "code": "QUOTE_UNAVAILABLE"
 }
 ```

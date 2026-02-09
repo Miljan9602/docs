@@ -57,7 +57,8 @@
               "frontend/api/get-config",
               "frontend/api/get-markets",
               "frontend/api/get-quote",
-              "frontend/api/post-intent"
+              "frontend/api/post-intent",
+              "frontend/api/health"
             ]
           }
         ]

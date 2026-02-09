@@ -34,24 +34,20 @@ Signs and returns the maker's (solver's) swap intent for on-chain settlement.
   <Expandable title="Intent object">
     <ParamField body="inputToken" type="string" required>Token user is selling</ParamField>
     <ParamField body="outputToken" type="string" required>Token user is buying</ParamField>
-    <ParamField body="inputAmount" type="string" required>Amount user is selling in wei (post-fee: original amount minus protocol fee)</ParamField>
+    <ParamField body="inputAmount" type="string" required>Amount user is selling in wei (net amount after protocol fee deduction)</ParamField>
     <ParamField body="outputAmount" type="string" required>Amount user will receive (wei)</ParamField>
   </Expandable>
-</ParamField>
-
-<ParamField body="fee" type="string" required>
-  Protocol fee amount in input token wei
 </ParamField>
 
 <ParamField body="taker_data" type="object" required>
   Taker's signed swap data for on-chain verification
   <Expandable title="taker_data object (HTTP nested structure)">
     <ParamField body="swap_intent" type="object" required>
-      The taker's original swap intent (pre-fee amounts)
+      The taker's original swap intent (amounts as signed by the user)
       <Expandable title="swap_intent fields">
         <ParamField body="inputToken" type="string" required>Token user is selling</ParamField>
         <ParamField body="outputToken" type="string" required>Token user is buying</ParamField>
-        <ParamField body="inputAmount" type="string" required>Original (pre-fee) input amount in wei</ParamField>
+        <ParamField body="inputAmount" type="string" required>Original input amount in wei (as signed by the user)</ParamField>
         <ParamField body="outputAmount" type="string" required>Output amount in wei</ParamField>
         <ParamField body="unwrap" type="boolean" required>Whether to unwrap native token</ParamField>
         <ParamField body="frontendReferral" type="string" required>Frontend referral bytes32</ParamField>
@@ -60,7 +56,7 @@ Signs and returns the maker's (solver's) swap intent for on-chain settlement.
     <ParamField body="signature_params" type="object" required>
       The taker's Permit2 signature parameters
       <Expandable title="signature_params fields">
-        <ParamField body="deadline" type="string" required>Signature expiry timestamp</ParamField>
+        <ParamField body="deadline" type="string" required>Signature expiry Unix timestamp (seconds)</ParamField>
         <ParamField body="nonce" type="string" required>Permit2 nonce</ParamField>
         <ParamField body="signer" type="string" required>Taker's address</ParamField>
         <ParamField body="signature" type="string" required>EIP-712 signature hex</ParamField>
@@ -117,7 +113,6 @@ curl -X POST "https://solver.example.com/api/v1/intent" \
       "inputAmount": "997000",
       "outputAmount": "990000"
     },
-    "fee": "3000",
     "taker_data": {
       "swap_intent": {
         "inputToken": "0x...",
@@ -193,7 +188,6 @@ For WebSocket solvers, the coordinator sends a `sign_intent` message and expects
     "quote_id": "550e8400-e29b-41d4-a716-446655440000",
     "chain_id": "1329",
     "user_address": "0x1234567890abcdef1234567890abcdef12345678",
-    "fee": "25000000",
     "intent": {
       "inputToken": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "outputToken": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
@@ -211,7 +205,7 @@ For WebSocket solvers, the coordinator sends a `sign_intent` message and expects
       },
       "signature_params": {
         "deadline": "1705612890",
-        "nonce": "0xabc123...",
+        "nonce": "98765432109876543210",
         "signer": "0x1234567890abcdef1234567890abcdef12345678",
         "signature": "0x..."
       }
@@ -240,7 +234,7 @@ For WebSocket solvers, the coordinator sends a `sign_intent` message and expects
       },
       "signature_params": {
         "deadline": "1705612890",
-        "nonce": "0xabc123...",
+        "nonce": "98765432109876543210",
         "signer": "0x7d344433d68955878756c017aa09e130236f44e9",
         "signature": "0x..."
       }
@@ -279,8 +273,7 @@ function reverseIntent(intent: Intent, takerAddress: string): MakerSwapIntent {
     inputAmount: intent.outputAmount,
     outputAmount: intent.inputAmount,
 
-    // Solver always sets unwrap to false
-    // The settlement contract uses the user's unwrap preference
+    // Solver decides independently whether to unwrap
     unwrap: false,
   };
 }
@@ -293,7 +286,7 @@ function reverseIntent(intent: Intent, takerAddress: string): MakerSwapIntent {
 | `inputAmount` | `outputAmount` | Swapped |
 | `outputAmount` | `inputAmount` | Swapped |
 | (none) | `counterparty` | Set to taker address |
-| (none) | `unwrap` | Always `false` |
+| (none) | `unwrap` | Solver's choice |
 
 ## Signing the Maker Intent
 
@@ -437,5 +430,5 @@ app.post("/api/v1/intent", async (req, res) => {
 ```
 
 <Note>
-  The RFQ settlement address and Permit2 address are configured per-chain in the solver's environment. See [Environment Variables](#) for configuration details.
+  The RFQ settlement address and Permit2 address are configured per-chain in the solver's environment. See [Solver Configuration](/solver/websocket-guide#configuration) for configuration details.
 </Note>
