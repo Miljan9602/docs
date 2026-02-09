@@ -89,32 +89,11 @@ Signs the maker's reversed intent for settlement.
     "inputAmount": "997000",
     "outputAmount": "990000"
   },
-  "taker_data": {
-    "swap_intent": {
-      "inputToken": "0x...",
-      "outputToken": "0x...",
-      "inputAmount": "1000000",
-      "outputAmount": "990000",
-      "unwrap": false,
-      "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
-    },
-    "signature_params": {
-      "deadline": "1700000000",
-      "nonce": "12345",
-      "signer": "0x...",
-      "signature": "0x..."
-    }
-  }
 }
 ```
 
 **Key fields:**
 - `intent.inputAmount` is the net amount after protocol fee deduction. This is what the solver should use as the maker's `outputAmount`.
-- `taker_data.swap_intent.inputAmount` is the original amount that the user signed.
-
-<Note>
-  Both HTTP and WSS transports use the same **nested** `taker_data` structure with `taker_data.swap_intent` and `taker_data.signature_params`. See the [WebSocket Guide](/solver/websocket-guide) for WSS format details.
-</Note>
 
 See [API Reference](/solver/api/post-intent) for full details.
 
