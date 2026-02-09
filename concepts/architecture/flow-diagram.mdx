@@ -39,7 +39,7 @@ sequenceDiagram
     Note right of M: Calculate quote
     M-->>S: Quote response
     Note right of S: Select best quote
-    S->>S: Cache quote in DB
+    S->>S: Store best quote
     S-->>F: Best quote response
     F-->>U: Display quote
 ```
@@ -188,7 +188,7 @@ sequenceDiagram
     R->>B: Distribute tokens
     R->>R: Emit RFQSettled event
     B-->>S: Transaction receipt
-    S->>S: Save to DB
+    S->>S: Record transaction
     S-->>F: Success + tx_hash
     F-->>U: Swap complete!
 ```
