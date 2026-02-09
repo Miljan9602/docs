@@ -64,8 +64,8 @@ sequenceDiagram
     Solver-->>Coordinator: markets_response { data }
 
     loop Every 30s
-        Coordinator->>Solver: ping
-        Solver-->>Coordinator: pong
+        Coordinator->>Solver: ping (native WebSocket frame)
+        Solver-->>Coordinator: pong (automatic)
     end
 
     loop Every 60s
@@ -126,15 +126,7 @@ Connection is closed with code `4003` after auth failure. Error code is `UNAUTHO
 
 ## Heartbeat
 
-The coordinator sends `ping` every 30 seconds. Respond with `pong`. Connections with no pong for 60 seconds are closed as stale.
-
-```json
-// Coordinator -> Solver
-{ "action": "ping" }
-
-// Solver -> Coordinator
-{ "action": "pong" }
-```
+The coordinator sends a native WebSocket ping frame every 30 seconds. Your WebSocket library responds with a pong frame automatically — no application code is needed. Connections with no pong for 60 seconds are closed as stale.
 
 ## Markets
 
@@ -451,10 +443,6 @@ function connect() {
         console.log(`Authenticated as ${msg.data.solver_name}`);
         break;
 
-      case "ping":
-        ws.send(encode({ action: "pong" }));
-        break;
-
       case "get_markets":
         ws.send(encode({
           action: "markets_response",
@@ -535,10 +523,6 @@ async fn main() -> anyhow::Result<()> {
         match msg["action"].as_str().unwrap_or("") {
             "auth_success" => {
                 println!("Authenticated as {}", msg["data"]["solver_name"]);
-            }
-            "ping" => {
-                tx.send(Message::Binary(to_vec(&json!({ "action": "pong" }))?))
-                    .await?;
             }
             "get_markets" => {
                 let resp = json!({
