@@ -300,7 +300,7 @@ async function signMakerIntent(
   </Accordion>
 
   <Accordion title="Verify Balance">
-    Ensure you have sufficient balance of the output token before signing.
+    Ensure you have sufficient balance of the output token before signing. Note that `max_size` is derived from your on-chain balances, providing automated capacity signaling — clients will not request quotes for amounts exceeding your reported `max_size`.
   </Accordion>
 
   <Accordion title="Use Short Deadlines">

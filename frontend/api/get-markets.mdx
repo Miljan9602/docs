@@ -27,10 +27,10 @@ Get the list of available trading pairs.
       The output token address (0x-prefixed, lowercase)
     </ResponseField>
     <ResponseField name="min_size" type="number | null">
-      Minimum trade size in USD. `null` means no minimum.
+      Minimum order size in **Input Token** units. `null` means no minimum.
     </ResponseField>
     <ResponseField name="max_size" type="number | null">
-      Maximum trade size in USD. `null` means no maximum.
+      Maximum order size in **Input Token** units. Dynamically derived from solver on-chain balances. `null` means no maximum.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -73,13 +73,13 @@ print(data["markets"])
       "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
       "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "min_size": 100,
-      "max_size": 10000
+      "max_size": 5000
     },
     {
-      "input_token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      "output_token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-      "min_size": null,
-      "max_size": null
+      "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "output_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "min_size": 100,
+      "max_size": 12000
     }
   ]
 }
@@ -104,6 +104,6 @@ print(data["markets"])
 
 ## Notes
 
-- Each market may have different min/max sizes based on available liquidity
-- Token pairs are unique per chain
-- The same token pair can appear with swapped input/output tokens for bidirectional trading
+- Markets always appear as directional pairs (A→B and B→A are separate entries with their own `max_size`)
+- `max_size` reflects each solver's available on-chain balance, converted to input token units
+- Each direction may have a different `max_size` depending on solver liquidity

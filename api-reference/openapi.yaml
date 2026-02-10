@@ -118,7 +118,11 @@ paths:
                   - input_token: "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1"
                     output_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7"
                     min_size: 100.00
-                    max_size: 10000.00
+                    max_size: 5000.00
+                  - input_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7"
+                    output_token: "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1"
+                    min_size: 100.00
+                    max_size: 12000.00
         "400":
           description: Validation error
           content:
@@ -497,11 +501,11 @@ components:
         min_size:
           type: number
           nullable: true
-          description: Minimum trade size in USD
+          description: Minimum trade size in input token units. null means no minimum.
         max_size:
           type: number
           nullable: true
-          description: Maximum trade size in USD
+          description: Maximum trade size in input token units. Dynamically derived from solver on-chain balances. null means no maximum.
 
     QuoteResponse:
       type: object

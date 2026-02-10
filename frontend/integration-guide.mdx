@@ -193,7 +193,7 @@ Set `unwrap: true` only when the output token is the chain's native wrapped toke
   </Accordion>
 
   <Accordion title="Validate Input Amounts">
-    Check amounts against market min/max before requesting quotes.
+    Compare the user's input amount against `max_size` from the directional market entry (A→B has its own `max_size` in input token units). If the amount exceeds `max_size`, skip the quote request and show a validation error to the user. This prevents unnecessary quote requests for amounts that exceed available solver liquidity.
   </Accordion>
 
   <Accordion title="Show Loading States">

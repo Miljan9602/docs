@@ -163,7 +163,14 @@ Markets are synced automatically:
       "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "output_token": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
       "min_size": 100,
-      "max_size": 10000
+      "max_size": 5000
+    },
+    {
+      "chain_id": "1329",
+      "input_token": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+      "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "min_size": 100,
+      "max_size": 12000
     }
   ]
 }
@@ -176,8 +183,8 @@ Markets are synced automatically:
 | `chain_id` | string | no | Chain ID (if omitted, inferred from request) |
 | `input_token` | string | yes | Token address (lowercase hex) |
 | `output_token` | string | yes | Token address (lowercase hex) |
-| `min_size` | number \| null | no | Minimum order size in USD |
-| `max_size` | number \| null | no | Maximum order size in USD |
+| `min_size` | number \| null | no | Minimum order size in input token units |
+| `max_size` | number \| null | no | Maximum order size in input token units. Derived from solver on-chain balances. |
 
 ## Quotes
 
@@ -431,7 +438,14 @@ function connect() {
               input_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
               output_token: "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
               min_size: 100,
-              max_size: 10000,
+              max_size: 5000,
+            },
+            {
+              chain_id: msg.data.chain_id,
+              input_token: "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+              output_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+              min_size: 100,
+              max_size: 12000,
             },
           ],
         }));
@@ -511,7 +525,13 @@ async fn main() -> anyhow::Result<()> {
                         "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
                         "output_token": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
                         "min_size": 100,
-                        "max_size": 10000
+                        "max_size": 5000
+                    }, {
+                        "chain_id": msg["data"]["chain_id"],
+                        "input_token": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+                        "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+                        "min_size": 100,
+                        "max_size": 12000
                     }]
                 });
                 tx.send(Message::Binary(to_vec(&resp)?)).await?;

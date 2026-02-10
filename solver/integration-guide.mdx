@@ -171,7 +171,7 @@ ERC20.approve(permit2_address, max_uint256)
   </Accordion>
 
   <Accordion title="Monitor Your Positions">
-    Track your token balances and inventory to manage risk.
+    Track your token balances and inventory to manage risk. Your on-chain balances directly determine `max_size` for your markets — the balance sync process converts your output token balance to input token units for each directional market.
   </Accordion>
 
   <Accordion title="Rate Limiting">
@@ -179,7 +179,7 @@ ERC20.approve(permit2_address, max_uint256)
   </Accordion>
 
   <Accordion title="Market Freshness">
-    Solvers must keep their market data fresh. If the coordinator does not receive updated market data from your solver within the configured freshness window, your markets will be considered stale and you will stop receiving quote requests until markets are refreshed. For WSS solvers, this happens automatically via periodic `get_markets` messages. For HTTP solvers, ensure your `/api/v1/markets` endpoint is responsive.
+    Solvers must keep their market data fresh. If the coordinator does not receive updated market data from your solver within the configured freshness window, your markets will be considered stale and you will stop receiving quote requests until markets are refreshed. For WSS solvers, this happens automatically via periodic `get_markets` messages. For HTTP solvers, ensure your `/api/v1/markets` endpoint is responsive. Market data includes `max_size` derived from your solver's on-chain balances, so keeping markets fresh also ensures accurate capacity signaling.
   </Accordion>
 </AccordionGroup>
 

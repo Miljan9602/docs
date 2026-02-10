@@ -158,6 +158,7 @@ print(f"Quote: {data['amount_out']} output tokens, Fee: {data['fee']}")
 
 ## Notes
 
+- Validate the input amount against `max_size` from the directional market entry before requesting a quote — this avoids unnecessary requests for amounts that exceed available liquidity
 - The quote TTL is configurable per market (default 15 seconds)
 - The `quote_id` is required when submitting an intent
 - Always check the `expiry` field before submitting - expired quotes will be rejected

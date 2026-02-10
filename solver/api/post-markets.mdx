@@ -36,11 +36,11 @@ Returns the list of trading pairs this solver provides liquidity for.
     <ResponseField name="output_token" type="string">
       The output token address (0x-prefixed)
     </ResponseField>
-    <ResponseField name="min_size" type="number">
-      Minimum trade size in USD
+    <ResponseField name="min_size" type="number | null">
+      Minimum trade size in input token units
     </ResponseField>
-    <ResponseField name="max_size" type="number">
-      Maximum trade size in USD
+    <ResponseField name="max_size" type="number | null">
+      Maximum trade size in input token units. Should reflect your output token balance converted to input token units.
     </ResponseField>
   </Expandable>
 </ResponseField>
@@ -63,13 +63,13 @@ curl -X POST "https://solver.example.com/api/v1/markets" \
       "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
       "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "min_size": 100.00,
-      "max_size": 10000.00
+      "max_size": 5000.00
     },
     {
       "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "output_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
       "min_size": 100.00,
-      "max_size": 10000.00
+      "max_size": 12000.00
     }
   ]
 }
@@ -111,7 +111,14 @@ For WebSocket solvers, the coordinator sends a `get_markets` message and expects
       "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
       "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "min_size": 100,
-      "max_size": 10000
+      "max_size": 5000
+    },
+    {
+      "chain_id": "1329",
+      "input_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "output_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "min_size": 100,
+      "max_size": 12000
     }
   ]
 }
@@ -129,7 +136,7 @@ import { successResponse, errorResponse, ErrorCodes } from "rfq-api";
 app.post("/api/v1/markets", (req, res) => {
   const { chain_id } = req.body;
 
-  // Return supported markets
+  // Return supported markets (both directions with max_size in input token units)
   res.json(
     successResponse({
       markets: [
@@ -137,7 +144,13 @@ app.post("/api/v1/markets", (req, res) => {
           input_token: "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
           output_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
           min_size: 100.0,
-          max_size: 10000.0,
+          max_size: 5000.0, // based on output token balance
+        },
+        {
+          input_token: "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+          output_token: "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+          min_size: 100.0,
+          max_size: 12000.0, // based on output token balance
         },
       ],
     })
@@ -147,6 +160,6 @@ app.post("/api/v1/markets", (req, res) => {
 
 ## Notes
 
-- Return both directions of a pair if you support bidirectional trading
-- `min_size` and `max_size` are in USD value
+- Return both directions for each pair (A→B and B→A as separate entries). `max_size` should reflect your output token balance converted to input token units
+- `min_size` and `max_size` are in input token units (not USD)
 - Authenticate requests using the shared auth key
