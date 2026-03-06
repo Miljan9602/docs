@@ -33,6 +33,7 @@ sequenceDiagram
     RFQ Coordinator->>Solver: POST /intent (forward to solver)
     Solver-->>RFQ Coordinator: Return signed maker intent
     RFQ Coordinator->>Chain: Execute settlement
+    RFQ Coordinator-->>Solver: POST /trade-result (tx_hash)
 ```
 
 ## Transport Options
@@ -64,6 +65,7 @@ Your solver must handle these operations (via HTTP endpoints or WSS messages):
 | Return supported markets | `POST /api/v1/markets` | `get_markets` -> `markets_response` |
 | Return price quote | `POST /api/v1/quote` | `get_quote` -> `quote_response` |
 | Sign maker intent | `POST /api/v1/intent` | `sign_intent` -> `intent_response` |
+| Receive settlement tx_hash | `POST /api/v1/trade-result` | `trade_result` *(no response)* |
 
 ## Next Steps
 

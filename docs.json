@@ -76,7 +76,8 @@
               "solver/api/overview",
               "solver/api/post-markets",
               "solver/api/post-quote",
-              "solver/api/post-intent"
+              "solver/api/post-intent",
+              "solver/api/post-trade-result"
             ]
           }
         ]

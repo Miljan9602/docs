@@ -97,6 +97,22 @@ Signs the maker's reversed intent for settlement.
 
 See [API Reference](/solver/api/post-intent) for full details.
 
+### POST /api/v1/trade-result
+
+Receives the settlement transaction hash after on-chain execution. This is a **fire-and-forget** notification from the coordinator — no response is required.
+
+**Request:**
+```json
+{
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+  "tx_hash": "0x1234...abcdef"
+}
+```
+
+Use the `tx_hash` to correlate on-chain settlements with your local trade records.
+
+See [API Reference](/solver/api/post-trade-result) for full details.
+
 ## Intent Reversal
 
 When you receive an intent request, create a **reversed** intent:
@@ -189,7 +205,7 @@ Before going live:
 
 <Steps>
   <Step title="Endpoints Implemented">
-    All three endpoints (`/markets`, `/quote`, `/intent`) are working
+    All required endpoints (`/markets`, `/quote`, `/intent`) are working, and `/trade-result` is handled for tx_hash notifications
   </Step>
   <Step title="Permit2 Approved">
     Approved Permit2 for all tokens you'll trade

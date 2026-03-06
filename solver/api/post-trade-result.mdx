@@ -1,0 +1,111 @@
+---
+title: "Trade Result"
+api: "POST https://your-solver.example.com/api/v1/trade-result"
+---
+
+<Note>
+  This endpoint is called by the RFQ Coordinator after on-chain settlement to notify the solver of the transaction hash. This is a **fire-and-forget** notification — the coordinator does not wait for or use the response.
+</Note>
+
+Receives the settlement transaction hash for a completed trade.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication: `Bearer <auth_key>`
+</ParamField>
+
+## Request Body
+
+<ParamField body="quote_id" type="string" required>
+  The quote ID from the original quote request
+</ParamField>
+
+<ParamField body="tx_hash" type="string" required>
+  The on-chain settlement transaction hash (`0x`-prefixed, 64 hex characters)
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success, `"error"` on failure
+</ResponseField>
+
+<ResponseField name="quote_id" type="string">
+  The original quote ID
+</ResponseField>
+
+<RequestExample>
+```bash cURL (from RFQ Coordinator)
+curl -X POST "https://solver.example.com/api/v1/trade-result" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_auth_key" \
+  -d '{
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+```json 400 - Validation Error
+{
+  "status": "error",
+  "error": "Invalid tx_hash format",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+</ResponseExample>
+
+## WSS Equivalent
+
+For WebSocket solvers, the coordinator sends a `trade_result` message. **No response is expected** — this is a one-way notification.
+
+**Message (Coordinator -> Solver):**
+```json
+{
+  "action": "trade_result",
+  "data": {
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  }
+}
+```
+
+## Implementation Example
+
+```typescript
+import { successResponse, errorResponse, ErrorCodes } from "rfq-api";
+
+app.post("/api/v1/trade-result", async (req, res) => {
+  const { quote_id, tx_hash } = req.body;
+
+  // Validate tx_hash format
+  if (!tx_hash || !/^0x[a-fA-F0-9]{64}$/.test(tx_hash)) {
+    return res.status(400).json(
+      errorResponse("Invalid tx_hash format", ErrorCodes.VALIDATION_INVALID_PARAM)
+    );
+  }
+
+  // Store tx_hash for analytics/audit trail
+  await db.update(trades)
+    .set({ tx_hash })
+    .where(eq(trades.quote_id, quote_id));
+
+  res.json(successResponse({ quote_id }));
+});
+```
+
+## Notes
+
+- This notification is **fire-and-forget** — the coordinator sends it immediately after receiving the transaction hash and does not wait for acknowledgment
+- Use the `tx_hash` to correlate on-chain settlement with your local trade records
+- The transaction may still be pending confirmation when this notification arrives
+- If the notification fails to reach your solver, the trade is still settled on-chain — you can monitor the chain directly as a fallback

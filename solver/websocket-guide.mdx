@@ -80,6 +80,10 @@ sequenceDiagram
     Note over Coordinator, Solver: When user submits intent
     Coordinator->>Solver: sign_intent { ... }
     Solver-->>Coordinator: intent_response { ... }
+
+    Note over Coordinator, Solver: After on-chain settlement
+    Coordinator->>Solver: trade_result { quote_id, tx_hash }
+    Note right of Solver: No response (fire-and-forget)
 ```
 
 ## Authentication
@@ -332,6 +336,31 @@ The signing logic is identical to the HTTP transport. See [Sign Intent](/solver/
 }
 ```
 
+## Trade Result
+
+After on-chain settlement, the coordinator sends a `trade_result` message with the transaction hash. This is a **fire-and-forget** notification — **no response is expected**.
+
+### Message (Coordinator -> Solver)
+
+```json
+{
+  "action": "trade_result",
+  "data": {
+    "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+    "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `quote_id` | string | The original quote ID |
+| `tx_hash` | string | Settlement transaction hash (`0x` + 64 hex chars) |
+
+<Note>
+  The solver should **not** send a response to this message. Use the `tx_hash` to update your local trade records for analytics and auditing. The transaction may still be pending confirmation when you receive this notification.
+</Note>
+
 ## Close Codes
 
 | Code | Name | Description |
@@ -476,6 +505,12 @@ function connect() {
           data: signedIntent,
         }));
         break;
+
+      case "trade_result":
+        // Fire-and-forget notification — no response needed
+        const { quote_id, tx_hash } = msg.data;
+        await saveTradeResult(quote_id, tx_hash); // your storage logic
+        break;
     }
   });
 
@@ -561,6 +596,12 @@ async fn main() -> anyhow::Result<()> {
                     "data": signed
                 });
                 tx.send(Message::Binary(to_vec(&resp)?)).await?;
+            }
+            "trade_result" => {
+                // Fire-and-forget — no response needed
+                let quote_id = msg["data"]["quote_id"].as_str().unwrap_or("");
+                let tx_hash = msg["data"]["tx_hash"].as_str().unwrap_or("");
+                save_trade_result(quote_id, tx_hash); // your storage logic
             }
             _ => {}
         }

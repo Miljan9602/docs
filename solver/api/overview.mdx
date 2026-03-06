@@ -91,6 +91,7 @@ For solvers (HTTP transport):
 | POST | `/api/v1/markets` | Report supported markets |
 | POST | `/api/v1/quote` | Provide a quote |
 | POST | `/api/v1/intent` | Sign maker intent |
+| POST | `/api/v1/trade-result` | Receive settlement tx_hash |
 
 For solvers (WSS transport):
 
@@ -99,6 +100,7 @@ For solvers (WSS transport):
 | `get_markets` | `markets_response` | Report supported markets |
 | `get_quote` | `quote_response` | Provide a quote |
 | `sign_intent` | `intent_response` | Sign maker intent |
+| `trade_result` | *(none — fire-and-forget)* | Receive settlement tx_hash |
 
 See the [WebSocket Guide](/solver/websocket-guide) for full WSS protocol details.
 

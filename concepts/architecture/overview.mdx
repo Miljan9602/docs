@@ -108,6 +108,7 @@ Uniswap's Permit2 contract enables:
 8. **RFQ Coordinator** forwards to the winning solver
 9. **Solver** signs the counter-intent with matching terms and reversed amounts
 10. **Trade is settled** atomically on-chain via the RFQSettlement contract
+11. **RFQ Coordinator** notifies the solver of the settlement `tx_hash` (fire-and-forget)
 
 ## Failure Handling
 
