@@ -83,6 +83,18 @@
         ]
       },
       {
+        "tab": "AI Skills",
+        "groups": [
+          {
+            "group": "Agent-Optimized References",
+            "pages": [
+              "skills/client-integration",
+              "skills/solver-integration"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Contract Addresses",
         "groups": [
           {

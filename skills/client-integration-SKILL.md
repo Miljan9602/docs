@@ -1,0 +1,701 @@
+---
+name: client-integration-nima-rfq
+description: Use when building a frontend or app that integrates with the Nima RFQ Protocol for token swaps - fetching quotes, signing EIP-712 intents, submitting swaps, handling Permit2 approvals, displaying quote countdowns, or debugging client-side RFQ errors
+---
+
+# Nima RFQ Protocol - Client Integration Reference
+
+## Quick Reference
+
+| Property | Value |
+|----------|-------|
+| Production URL | `https://dev-rfq.saphyre.xyz` |
+| Testnet URL | `https://testnet-dev-rfq.saphyre.xyz` |
+| API Prefix | `/api/v1/` |
+| Authentication | None (public API) |
+| Sei Mainnet Chain ID | `1329` |
+| Permit2 (Sei) | `0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98` |
+| Signing Standard | EIP-712 via Permit2 (`PermitWitnessTransferFrom` + `TakerSwapIntent` witness) |
+| Nonce Strategy | Random 256-bit (unordered bitmap) |
+| Quote TTL | 15s (volatile) / 30s (stable) |
+| Request Body Limit | 10KB |
+
+## Overview
+
+The Nima RFQ (Request for Quote) Protocol enables **gasless, atomic token swaps** by sourcing fixed quotes from professional solvers. Users get better pricing, zero slippage, and MEV protection. The client integration involves fetching quotes from the RFQ Coordinator, having users sign EIP-712 typed data via Permit2, and submitting signed intents for on-chain settlement.
+
+**Trust model:** The RFQ Coordinator cannot move funds without valid user + solver signatures, cannot change prices after signatures are collected, and cannot settle expired or mismatched intents.
+
+## Integration Flow
+
+Follow these steps in order for a complete integration:
+
+1. **Fetch config** — `GET /api/v1/config?chain_id=1329` to get contract addresses. Never hardcode.
+2. **Fetch markets** — `GET /api/v1/markets` to get available pairs and `max_size` limits.
+3. **Request quote** — `GET /api/v1/quote` with token addresses and amount. Display `amount_out` and start countdown from `expiry`.
+4. **Approve Permit2** — One-time per token: `ERC20.approve(permit2_address, maxUint256)`. Check allowance first.
+5. **Sign intent** — Build EIP-712 typed data (`PermitWitnessTransferFrom` + `TakerSwapIntent`), sign with user's wallet.
+6. **Submit intent** — `POST /api/v1/intent` with signed data. Receive `tx_hash` on success.
+
+If the quote expires before step 6, go back to step 3.
+
+## Response Format
+
+```json
+// Success
+{ "status": "ok", "field1": "...", "field2": "..." }
+
+// Error
+{ "status": "error", "error": "Human readable message", "code": "ERROR_CODE" }
+```
+
+---
+
+## API Endpoints
+
+### GET /api/v1/config
+
+Get chain configuration including contract addresses. **Always fetch dynamically - never hardcode addresses.**
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `chain_id` | string | yes | Blockchain chain ID (e.g., `"1329"` for Sei Mainnet) |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "chain_id": "1329",
+  "chain_name": "Sei Mainnet",
+  "rfq_settlement_address": "0x...",
+  "permit2_address": "0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98",
+  "min_quote_ttl_ms": 15000,
+  "max_quote_ttl_ms": 30000
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `rfq_settlement_address` | RFQSettlement contract - used as `spender` in EIP-712 signing |
+| `permit2_address` | Permit2 contract - used as `verifyingContract` in EIP-712 domain |
+| `min_quote_ttl_ms` | Minimum quote TTL (volatile pairs, e.g., 15s) |
+| `max_quote_ttl_ms` | Maximum quote TTL (stable pairs, e.g., 30s) |
+
+---
+
+### GET /api/v1/markets
+
+Get available trading pairs.
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `chain_id` | string | yes | Blockchain chain ID |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "markets": [
+    {
+      "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "min_size": 100.00,
+      "max_size": 5000.00
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `input_token` | string | Input token address (0x-prefixed, lowercase) |
+| `output_token` | string | Output token address (0x-prefixed, lowercase) |
+| `min_size` | number or null | Minimum trade size in input token units |
+| `max_size` | number or null | Maximum trade size in input token units (derived from solver on-chain balances) |
+
+Markets are directional: A->B and B->A are separate entries with their own `max_size`. Validate user input amounts against `max_size` before requesting quotes.
+
+---
+
+### GET /api/v1/quote
+
+Request the best available quote for a token swap. The coordinator queries all solvers in parallel (5s timeout) and returns the best quote.
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `input_token` | string | yes | Token address to sell (0x-prefixed, 40 hex chars) |
+| `output_token` | string | yes | Token address to buy (0x-prefixed, 40 hex chars) |
+| `amount` | string | yes | Amount to swap in wei (numeric string) |
+| `chain_id` | string | yes | Blockchain chain ID |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+  "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+  "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+  "amount_in": "1000000000000000000",
+  "amount_out": "498500000000000000",
+  "fee": "5000000000000000",
+  "expiry": 1705612830000,
+  "chain_id": "1329"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `quote_id` | string | UUID - required when submitting intent |
+| `amount_in` | string | Total input amount in wei (**fee-inclusive**) |
+| `amount_out` | string | Output amount user will receive in wei |
+| `fee` | string | Protocol fee amount in wei (input token) |
+| `expiry` | number | Unix timestamp in **milliseconds** when quote expires |
+
+---
+
+### POST /api/v1/intent
+
+Submit a signed swap intent for execution. Triggers atomic on-chain settlement.
+
+**Request Body:**
+
+```json
+{
+  "quote_id": "550e8400-e29b-41d4-a716-446655440000",
+  "chain_id": "1329",
+  "user_address": "0x...",
+  "swap_intent": {
+    "inputToken": "0x...",
+    "outputToken": "0x...",
+    "inputAmount": "1000000000000000000",
+    "outputAmount": "498500000000000000",
+    "unwrap": false,
+    "frontendReferral": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "signature_params": {
+    "deadline": "1705613400",
+    "nonce": "123456789012345678901234567890",
+    "signer": "0x...",
+    "signature": "0x..."
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `quote_id` | string | From quote response |
+| `chain_id` | string | Chain ID |
+| `user_address` | string | Must match `signer` in signature_params |
+| `swap_intent.inputToken` | string | Must match quote's `input_token` |
+| `swap_intent.outputToken` | string | Must match quote's `output_token` |
+| `swap_intent.inputAmount` | string | Must exactly match quote's `amount_in` |
+| `swap_intent.outputAmount` | string | Must exactly match quote's `amount_out` |
+| `swap_intent.unwrap` | boolean | `true` only if output is wrapped native token (WSEI/WETH) and user wants native currency |
+| `swap_intent.frontendReferral` | string | bytes32 hex string. Zero bytes if no referral. Contact team@saphyre.xyz to register. |
+| `signature_params.deadline` | string | Unix timestamp in **seconds** (must be future) |
+| `signature_params.nonce` | string | Random 256-bit integer as string |
+| `signature_params.signer` | string | Address that signed (must match `user_address`) |
+| `signature_params.signature` | string | EIP-712 signature (0x-prefixed hex) |
+
+**Success Response:**
+
+```json
+{
+  "status": "ok",
+  "tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+}
+```
+
+The transaction is submitted and confirmed before the response is returned. Settlement is atomic - either both tokens transfer or neither does.
+
+---
+
+### GET /api/v1/health
+
+Health check endpoint.
+
+**Response:**
+
+```json
+{ "status": "ok", "uptime": "3600s" }
+```
+
+| Status | HTTP Code | Meaning |
+|--------|-----------|---------|
+| `ok` | 200 | All systems operational |
+| `degraded` | 503 | Some services unavailable |
+
+---
+
+## Permit2 Approval Flow
+
+Users must approve the Permit2 contract **once per token** before swapping. After approval, all subsequent swaps use gasless EIP-712 signatures.
+
+```typescript
+import { erc20Abi, maxUint256 } from 'viem';
+
+// 1. Check current allowance
+const allowance = await publicClient.readContract({
+  address: inputToken,
+  abi: erc20Abi,
+  functionName: 'allowance',
+  args: [userAddress, PERMIT2_ADDRESS],  // from /api/v1/config
+});
+
+// 2. Approve if insufficient
+if (allowance < BigInt(amountIn)) {
+  await walletClient.writeContract({
+    address: inputToken,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [PERMIT2_ADDRESS, maxUint256],
+  });
+}
+```
+
+---
+
+## EIP-712 Signing Specification (Taker)
+
+The taker signs a `PermitWitnessTransferFrom` message with a `TakerSwapIntent` witness.
+
+### Domain
+
+```json
+{
+  "name": "Permit2",
+  "chainId": 1329,
+  "verifyingContract": "<permit2_address from /api/v1/config>"
+}
+```
+
+### Types
+
+```json
+{
+  "PermitWitnessTransferFrom": [
+    { "name": "permitted", "type": "TokenPermissions" },
+    { "name": "spender", "type": "address" },
+    { "name": "nonce", "type": "uint256" },
+    { "name": "deadline", "type": "uint256" },
+    { "name": "witness", "type": "TakerSwapIntent" }
+  ],
+  "TokenPermissions": [
+    { "name": "token", "type": "address" },
+    { "name": "amount", "type": "uint256" }
+  ],
+  "TakerSwapIntent": [
+    { "name": "inputToken", "type": "address" },
+    { "name": "outputToken", "type": "address" },
+    { "name": "inputAmount", "type": "uint256" },
+    { "name": "outputAmount", "type": "uint256" },
+    { "name": "unwrap", "type": "bool" },
+    { "name": "frontendReferral", "type": "bytes32" }
+  ]
+}
+```
+
+### Message Values
+
+| Field | Value |
+|-------|-------|
+| `permitted.token` | Input token address (same as `witness.inputToken`) |
+| `permitted.amount` | `amount_in` from quote (fee-inclusive) |
+| `spender` | `rfq_settlement_address` from `/api/v1/config` |
+| `nonce` | Random 256-bit integer |
+| `deadline` | Unix timestamp (seconds) when signature expires |
+| `witness.inputToken` | Input token address |
+| `witness.outputToken` | Output token address |
+| `witness.inputAmount` | `amount_in` from quote (**must match exactly**) |
+| `witness.outputAmount` | `amount_out` from quote (**must match exactly**) |
+| `witness.unwrap` | `true` only if output is wrapped native token and user wants native |
+| `witness.frontendReferral` | bytes32 referral identifier, or zero bytes |
+
+**CRITICAL:** `inputAmount` in the witness MUST equal `amount_in` from the quote (the fee-inclusive amount). The protocol fee is deducted on-chain during settlement.
+
+---
+
+## Nonce Strategy
+
+Permit2 uses **unordered nonces** with bitmap tracking. Generate a random 256-bit nonce for each signature. Do NOT try to fetch a "current nonce" from the contract.
+
+```typescript
+// TypeScript
+const nonce = BigInt('0x' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''));
+```
+
+```python
+# Python
+import secrets
+nonce = secrets.randbits(256)
+```
+
+---
+
+## Fee Mechanics (Client Perspective)
+
+Fees are configured per market in basis points (`fee_tier_bps`). The fee is **already included** in `amount_in`:
+
+1. User requests quote with `amount` (their desired input)
+2. Coordinator calculates fee: `fee = amount * feePips / 1,000,000`
+3. Coordinator sends `amount - fee` to solver for pricing
+4. Solver quotes output based on post-fee amount
+5. User receives response: `amount_in` = original amount (fee-inclusive), `amount_out` = solver's quote
+6. User signs with `inputAmount = amount_in` (the full fee-inclusive amount)
+7. On-chain: fee goes to treasury, solver gets remainder, user gets full `amount_out`
+
+**The user always receives the full `amount_out` with no deduction.** The fee comes from the user's input.
+
+| Unit | Value | Example |
+|------|-------|---------|
+| 1 basis point (bps) | 100 pips | 0.01% |
+| 30 bps | 3,000 pips | 0.30% |
+| Maximum | 10,000 pips | 1.00% |
+
+---
+
+## Quote TTL Per Market
+
+| Market Type | Example Pairs | TTL |
+|-------------|---------------|-----|
+| Volatile | ETH/USDC, SEI/USDC, BTC/USDC | 15 seconds |
+| Stable | USDC/USDT, DAI/USDC | 30 seconds |
+
+The `expiry` field in the quote response is a Unix timestamp in **milliseconds**.
+
+---
+
+## unwrap Field
+
+Set `unwrap: true` **only** when the output token is the chain's wrapped native token (e.g., WSEI, WETH) and the user wants to receive native currency instead. The settlement contract unwraps before sending. Set to `false` for all other tokens.
+
+---
+
+## frontendReferral Field
+
+The `frontendReferral` is a **bytes32** value (not an address). Use zero bytes (`0x` + 64 zeros) if you don't have a registered referral. Contact team@saphyre.xyz to register a frontend referral identifier. It is emitted in the `RFQSettled` event on-chain.
+
+---
+
+## Complete TypeScript Example (viem)
+
+```typescript
+import { createWalletClient, createPublicClient, custom, http, erc20Abi, maxUint256 } from 'viem';
+import { sei } from 'viem/chains';
+
+const CHAIN_ID = 1329;
+const BASE_URL = 'https://dev-rfq.saphyre.xyz';
+
+// 1. Get config
+const config = await fetch(`${BASE_URL}/api/v1/config?chain_id=${CHAIN_ID}`).then(r => r.json());
+const PERMIT2 = config.permit2_address;
+const RFQ_SETTLEMENT = config.rfq_settlement_address;
+
+// 2. Get quote
+const quoteParams = new URLSearchParams({
+  input_token: '0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1',  // USDC
+  output_token: '0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7', // WETH
+  amount: '1000000000',  // 1000 USDC (6 decimals)
+  chain_id: String(CHAIN_ID),
+});
+const quote = await fetch(`${BASE_URL}/api/v1/quote?${quoteParams}`).then(r => r.json());
+
+// 3. Check/approve Permit2 (one-time per token)
+const publicClient = createPublicClient({ chain: sei, transport: http() });
+const walletClient = createWalletClient({ chain: sei, transport: custom(window.ethereum) });
+const [account] = await walletClient.getAddresses();
+
+const allowance = await publicClient.readContract({
+  address: quote.input_token as `0x${string}`,
+  abi: erc20Abi,
+  functionName: 'allowance',
+  args: [account, PERMIT2 as `0x${string}`],
+});
+
+if (allowance < BigInt(quote.amount_in)) {
+  await walletClient.writeContract({
+    address: quote.input_token as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [PERMIT2 as `0x${string}`, maxUint256],
+  });
+}
+
+// 4. Build EIP-712 typed data
+const domain = {
+  name: 'Permit2' as const,
+  chainId: CHAIN_ID,
+  verifyingContract: PERMIT2 as `0x${string}`,
+};
+
+const types = {
+  PermitWitnessTransferFrom: [
+    { name: 'permitted', type: 'TokenPermissions' },
+    { name: 'spender', type: 'address' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'witness', type: 'TakerSwapIntent' },
+  ],
+  TokenPermissions: [
+    { name: 'token', type: 'address' },
+    { name: 'amount', type: 'uint256' },
+  ],
+  TakerSwapIntent: [
+    { name: 'inputToken', type: 'address' },
+    { name: 'outputToken', type: 'address' },
+    { name: 'inputAmount', type: 'uint256' },
+    { name: 'outputAmount', type: 'uint256' },
+    { name: 'unwrap', type: 'bool' },
+    { name: 'frontendReferral', type: 'bytes32' },
+  ],
+} as const;
+
+const nonce = BigInt('0x' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''));
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 minutes
+
+const message = {
+  permitted: {
+    token: quote.input_token as `0x${string}`,
+    amount: BigInt(quote.amount_in),
+  },
+  spender: RFQ_SETTLEMENT as `0x${string}`,
+  nonce,
+  deadline,
+  witness: {
+    inputToken: quote.input_token as `0x${string}`,
+    outputToken: quote.output_token as `0x${string}`,
+    inputAmount: BigInt(quote.amount_in),
+    outputAmount: BigInt(quote.amount_out),
+    unwrap: false,
+    frontendReferral: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+  },
+};
+
+// 5. Sign
+const signature = await walletClient.signTypedData({
+  account,
+  domain,
+  types,
+  primaryType: 'PermitWitnessTransferFrom',
+  message,
+});
+
+// 6. Submit intent
+const result = await fetch(`${BASE_URL}/api/v1/intent`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    quote_id: quote.quote_id,
+    chain_id: String(CHAIN_ID),
+    user_address: account,
+    swap_intent: {
+      inputToken: quote.input_token,
+      outputToken: quote.output_token,
+      inputAmount: quote.amount_in,
+      outputAmount: quote.amount_out,
+      unwrap: false,
+      frontendReferral: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    },
+    signature_params: {
+      deadline: deadline.toString(),
+      nonce: nonce.toString(),
+      signer: account,
+      signature,
+    },
+  }),
+}).then(r => r.json());
+
+console.log('Settlement TX:', result.tx_hash);
+```
+
+---
+
+## Python Signing Example
+
+```python
+from eth_account import Account
+from eth_account.messages import encode_typed_data
+import secrets
+import time
+import requests
+
+BASE_URL = "https://dev-rfq.saphyre.xyz"
+CHAIN_ID = 1329
+
+# 1. Get config
+config = requests.get(f"{BASE_URL}/api/v1/config", params={"chain_id": str(CHAIN_ID)}).json()
+PERMIT2 = config["permit2_address"]
+RFQ_SETTLEMENT = config["rfq_settlement_address"]
+
+# 2. Get quote
+quote = requests.get(f"{BASE_URL}/api/v1/quote", params={
+    "input_token": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+    "output_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+    "amount": "1000000000",
+    "chain_id": str(CHAIN_ID),
+}).json()
+
+# 3. Build typed data
+nonce = secrets.randbits(256)
+deadline = int(time.time()) + 300
+
+typed_data = {
+    "types": {
+        "EIP712Domain": [
+            {"name": "name", "type": "string"},
+            {"name": "chainId", "type": "uint256"},
+            {"name": "verifyingContract", "type": "address"},
+        ],
+        "PermitWitnessTransferFrom": [
+            {"name": "permitted", "type": "TokenPermissions"},
+            {"name": "spender", "type": "address"},
+            {"name": "nonce", "type": "uint256"},
+            {"name": "deadline", "type": "uint256"},
+            {"name": "witness", "type": "TakerSwapIntent"},
+        ],
+        "TokenPermissions": [
+            {"name": "token", "type": "address"},
+            {"name": "amount", "type": "uint256"},
+        ],
+        "TakerSwapIntent": [
+            {"name": "inputToken", "type": "address"},
+            {"name": "outputToken", "type": "address"},
+            {"name": "inputAmount", "type": "uint256"},
+            {"name": "outputAmount", "type": "uint256"},
+            {"name": "unwrap", "type": "bool"},
+            {"name": "frontendReferral", "type": "bytes32"},
+        ],
+    },
+    "primaryType": "PermitWitnessTransferFrom",
+    "domain": {
+        "name": "Permit2",
+        "chainId": CHAIN_ID,
+        "verifyingContract": PERMIT2,
+    },
+    "message": {
+        "permitted": {
+            "token": quote["input_token"],
+            "amount": int(quote["amount_in"]),
+        },
+        "spender": RFQ_SETTLEMENT,
+        "nonce": nonce,
+        "deadline": deadline,
+        "witness": {
+            "inputToken": quote["input_token"],
+            "outputToken": quote["output_token"],
+            "inputAmount": int(quote["amount_in"]),
+            "outputAmount": int(quote["amount_out"]),
+            "unwrap": False,
+            "frontendReferral": bytes(32),
+        },
+    },
+}
+
+# 4. Sign
+private_key = "0x..."  # Use env var, never hardcode
+signed = Account.sign_typed_data(private_key, typed_data)
+signature = signed.signature.hex()
+
+# 5. Submit intent
+result = requests.post(f"{BASE_URL}/api/v1/intent", json={
+    "quote_id": quote["quote_id"],
+    "chain_id": str(CHAIN_ID),
+    "user_address": Account.from_key(private_key).address,
+    "swap_intent": {
+        "inputToken": quote["input_token"],
+        "outputToken": quote["output_token"],
+        "inputAmount": quote["amount_in"],
+        "outputAmount": quote["amount_out"],
+        "unwrap": False,
+        "frontendReferral": "0x" + "0" * 64,
+    },
+    "signature_params": {
+        "deadline": str(deadline),
+        "nonce": str(nonce),
+        "signer": Account.from_key(private_key).address,
+        "signature": "0x" + signature,
+    },
+}).json()
+
+print(f"TX Hash: {result['tx_hash']}")
+```
+
+---
+
+## Error Codes Reference
+
+### Validation Errors (400)
+
+| Code | Description | Resolution |
+|------|-------------|------------|
+| `VALIDATION_INVALID_PARAM` | Request validation failed | Check the `error` message for specifics |
+| `VALIDATION_INVALID_CHAIN` | Invalid chain ID | Use supported chain ID (e.g., `"1329"`) |
+| `VALIDATION_INVALID_ADDRESS` | Invalid Ethereum address | 0x-prefixed, 40 hex characters |
+| `VALIDATION_INVALID_AMOUNT` | Invalid amount format | Positive integer string (wei) |
+| `VALIDATION_SIGNER_MISMATCH` | Signer doesn't match user | `signer` must match `user_address` |
+| `VALIDATION_SIGNATURE_MISMATCH` | Signature doesn't match typed data | Verify EIP-712 domain, types, values |
+
+### Market Errors (400/404)
+
+| Code | Description | Resolution |
+|------|-------------|------------|
+| `MARKET_NOT_FOUND` | Trading pair not found | Check token addresses |
+| `MARKET_NOT_SUPPORTED` | Market not supported | Pair not available |
+| `MARKET_NO_MAKERS` | No solvers for pair | No liquidity providers |
+
+### Quote Errors (400/404/503)
+
+| Code | Description | Resolution |
+|------|-------------|------------|
+| `QUOTE_NOT_FOUND` | Quote ID not found | Request a new quote |
+| `QUOTE_EXPIRED` | Quote TTL exceeded | Request fresh quote, submit faster |
+| `QUOTE_AMOUNT_MISMATCH` | Amounts don't match quote | Use exact amounts from quote |
+| `QUOTE_UNAVAILABLE` | Unable to get quote | Retry later or different amount |
+| `QUOTE_REJECTED` | Quote could not be fulfilled | Request new quote |
+| `QUOTE_ALREADY_PROCESSING` | Quote being settled (409) | Wait for current settlement |
+
+### Other Errors
+
+| Code | HTTP | Description |
+|------|------|-------------|
+| `INTENT_INVALID_SIGNATURE` | 400 | Invalid EIP-712 signature |
+| `INTENT_SETTLEMENT_FAILED` | 500 | On-chain settlement failed |
+| `SETTLEMENT_FAILED` | 500 | Settlement failed |
+| `CHAIN_NOT_SUPPORTED` | 400 | Chain not supported |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| `AUTH_UNAUTHORIZED` | 401 | Invalid auth token |
+| `INTERNAL_ERROR` | 500 | Internal server error |
+
+---
+
+## Integration Checklist
+
+1. Fetch config from `/api/v1/config` - do not hardcode contract addresses
+2. Fetch and display available markets from `/api/v1/markets`
+3. Validate user input amounts against `max_size` before requesting quotes
+4. Fetch quotes and display `amount_out` to users
+5. Handle one-time Permit2 approval flow per token
+6. Sign EIP-712 `PermitWitnessTransferFrom` with `TakerSwapIntent` witness
+7. Use random 256-bit nonces (not sequential)
+8. Submit signed intent with exact amounts from quote
+9. Handle quote expiry with auto-refresh (5s buffer before expiry)
+10. Display countdown timer showing time remaining on quote
+11. Handle all error codes gracefully with user-friendly messages
+
+## Best Practices
+
+- **Countdown timer:** Show users how much time they have to sign and submit
+- **Auto-refresh quotes:** Schedule refresh at `expiry - 5000ms`
+- **Validate input amounts:** Compare against `max_size` from the directional market entry before requesting quotes
+- **Show loading states:** Provide feedback during each step (fetching quote, awaiting signature, submitting, confirming)
+- **Deadline:** Set a reasonable deadline for signatures (5-10 minutes from now)
+- **Error handling:** Use the `code` field for programmatic handling, `error` for user messages
