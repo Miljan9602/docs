@@ -1,0 +1,313 @@
+---
+title: "Quote"
+description: "Get swap quotes via the Dragonswap routing API and on-chain SplitRouter"
+---
+
+## Overview
+
+Getting a swap quote is a two-step process:
+
+1. **Route Discovery** — Call the Dragonswap routing API to find the optimal swap path across V1 and V2 pools
+2. **On-chain Quote** — Pass the route into `DragonswapSplitRouter.quoteExactInput()` (or `quoteExactOutput()`) via `eth_call` to get the expected output amount and price impact
+
+```
+User wants to swap Token A → Token B
+
+Step 1: GET /api/v3/quote → returns optimal route (pool hops)
+Step 2: eth_call SplitRouter.quoteExactInput(route) → returns outputAmount + impactPips
+Step 3: (optional) Execute swap via SplitRouter.exactInput(route)
+```
+
+## Step 1 — Route Discovery API
+
+```
+GET https://sei-api.dragonswap.app/api/v3/quote
+```
+
+Finds the optimal swap route across all available Dragonswap pools.
+
+### Query Parameters
+
+<ParamField query="amount" type="string" required>
+  Swap amount in wei (smallest unit of the token)
+</ParamField>
+
+<ParamField query="tokenInAddress" type="string" required>
+  Input token contract address (0x-prefixed)
+</ParamField>
+
+<ParamField query="tokenOutAddress" type="string" required>
+  Output token contract address (0x-prefixed)
+</ParamField>
+
+<ParamField query="type" type="string" required>
+  Quote direction: `exactIn` or `exactOut`
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"success"` or `"error"`
+</ResponseField>
+
+<ResponseField name="quote" type="object">
+  The routing result.
+</ResponseField>
+
+<ResponseField name="quote.route" type="array">
+  Array of pool hops defining the swap path. Each hop contains:
+  - `pool` (string) — Pool contract address
+  - `poolType` (number) — `0` = V1, `1` = V2
+  - `inputToken` (string) — Input token address for this hop
+  - `outputToken` (string) — Output token address for this hop
+  - `feePips` (number) — Fee in pips (1 pip = 0.0001%)
+  - `inputPercentage` (number) — Percentage of input routed through this hop
+  - `outputPercentage` (number) — Percentage of output from this hop
+</ResponseField>
+
+<ResponseField name="quote.version" type="string">
+  Router version string
+</ResponseField>
+
+<ResponseField name="linearSubroutes" type="array">
+  Flattened view of the route for display purposes. Each subroute contains:
+  - `percentage` (number) — Percentage of the total swap going through this subroute
+  - `swaps` (array) — Array of hops with the same fields as `quote.route` (minus percentage fields)
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://sei-api.dragonswap.app/api/v3/quote?\
+amount=1000000000000000000&\
+tokenInAddress=0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7&\
+tokenOutAddress=0x3894085Ef7Ff0f0aEDf52E2A2704928d1Ec074F2&\
+type=exactIn"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  amount: "1000000000000000000",
+  tokenInAddress: "0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7",
+  tokenOutAddress: "0x3894085Ef7Ff0f0aEDf52E2A2704928d1Ec074F2",
+  type: "exactIn",
+});
+
+const response = await fetch(
+  `https://sei-api.dragonswap.app/api/v3/quote?${params}`
+);
+const data = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "success",
+  "quote": {
+    "route": [
+      {
+        "pool": "0x1234567890abcdef1234567890abcdef12345678",
+        "poolType": 1,
+        "inputToken": "0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7",
+        "outputToken": "0x3894085Ef7Ff0f0aEDf52E2A2704928d1Ec074F2",
+        "feePips": 3000,
+        "inputPercentage": 100,
+        "outputPercentage": 100
+      }
+    ],
+    "version": "v3"
+  },
+  "linearSubroutes": [
+    {
+      "percentage": 100,
+      "swaps": [
+        {
+          "pool": "0x1234567890abcdef1234567890abcdef12345678",
+          "poolType": 1,
+          "inputToken": "0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7",
+          "outputToken": "0x3894085Ef7Ff0f0aEDf52E2A2704928d1Ec074F2",
+          "feePips": 3000
+        }
+      ]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Step 2 — On-chain Quote via SplitRouter
+
+Use the route from Step 1 to get an exact quote from the `DragonswapSplitRouter` contract. This is a read-only call (`eth_call` / `simulateContract`) — no transaction is submitted.
+
+**Contract:** [`0xCaCbF14f07AF3Be93C6fc8bF0a43f9279F792199`](https://seitrace.com/address/0xCaCbF14f07AF3Be93C6fc8bF0a43f9279F792199)
+
+### Functions
+
+| Function | Direction | Input Struct |
+|---|---|---|
+| `quoteExactInput(ExactInputParams)` | exactIn | `ExactInputParams` |
+| `quoteExactOutput(ExactOutputParams)` | exactOut | `ExactOutputParams` |
+
+Both return: `(uint256 inputAmount, uint256 outputAmount, uint256 impactPips)`
+
+### Structs
+
+**`ExactInputParams`**
+| Field | Type | Description |
+|---|---|---|
+| `inputAmount` | `uint256` | Amount of input token in wei |
+| `minOutputAmount` | `uint256` | Set to `0` for quoting |
+| `deadline` | `uint256` | Set to `0` for quoting |
+| `unwrap` | `bool` | Set to `false` for quoting |
+| `route` | `SwapParams[]` | Array of swap hops from the route API |
+
+**`ExactOutputParams`**
+| Field | Type | Description |
+|---|---|---|
+| `outputAmount` | `uint256` | Desired amount of output token in wei |
+| `maxInputAmount` | `uint256` | Set to `0` for quoting |
+| `deadline` | `uint256` | Set to `0` for quoting |
+| `unwrap` | `bool` | Set to `false` for quoting |
+| `route` | `SwapParams[]` | Array of swap hops from the route API |
+
+**`SwapParams`**
+| Field | Type | Description |
+|---|---|---|
+| `poolType` | `uint8` | `0` = V1, `1` = V2 |
+| `pool` | `address` | Pool contract address |
+| `inputToken` | `address` | Input token address for this hop |
+| `outputToken` | `address` | Output token address for this hop |
+| `feePips` | `uint24` | Fee in pips |
+| `inputPercentage` | `uint8` | Input percentage for this hop |
+| `outputPercentage` | `uint8` | Output percentage for this hop |
+
+<Info>
+  `minOutputAmount`, `deadline`, and `unwrap` are **unused** during quoting — set them to `0n`, `0n`, and `false` respectively.
+</Info>
+
+### Mapping Route API Response to SwapParams
+
+Each entry in `quote.route` maps directly to a `SwapParams` struct:
+
+```typescript
+const route: SwapParams[] = data.quote.route.map((hop) => ({
+  poolType: hop.poolType,
+  pool: hop.pool as `0x${string}`,
+  inputToken: hop.inputToken as `0x${string}`,
+  outputToken: hop.outputToken as `0x${string}`,
+  feePips: hop.feePips,
+  inputPercentage: hop.inputPercentage,
+  outputPercentage: hop.outputPercentage,
+}));
+```
+
+### Full Example (viem/TypeScript)
+
+```typescript
+import { createPublicClient, http, parseAbi } from "viem";
+import { sei } from "viem/chains";
+
+const publicClient = createPublicClient({
+  chain: sei,
+  transport: http(),
+});
+
+const SPLIT_ROUTER = "0xCaCbF14f07AF3Be93C6fc8bF0a43f9279F792199" as const;
+
+const splitRouterAbi = parseAbi([
+  "struct SwapParams { uint8 poolType; address pool; address inputToken; address outputToken; uint24 feePips; uint8 inputPercentage; uint8 outputPercentage }",
+  "struct ExactInputParams { uint256 inputAmount; uint256 minOutputAmount; uint256 deadline; bool unwrap; SwapParams[] route }",
+  "struct ExactOutputParams { uint256 outputAmount; uint256 maxInputAmount; uint256 deadline; bool unwrap; SwapParams[] route }",
+  "function quoteExactInput(ExactInputParams params) external returns (uint256 inputAmount, uint256 outputAmount, uint256 impactPips)",
+  "function quoteExactOutput(ExactOutputParams params) external returns (uint256 inputAmount, uint256 outputAmount, uint256 impactPips)",
+]);
+
+async function getQuote(
+  tokenIn: string,
+  tokenOut: string,
+  amount: string,
+  type: "exactIn" | "exactOut"
+) {
+  // Step 1: Get optimal route from the API
+  const params = new URLSearchParams({
+    amount,
+    tokenInAddress: tokenIn,
+    tokenOutAddress: tokenOut,
+    type,
+  });
+
+  const res = await fetch(
+    `https://sei-api.dragonswap.app/api/v3/quote?${params}`
+  );
+  const data = await res.json();
+
+  if (data.status !== "success") {
+    throw new Error("Route discovery failed");
+  }
+
+  // Step 2: Map API route to SwapParams structs
+  const route = data.quote.route.map((hop: any) => ({
+    poolType: hop.poolType,
+    pool: hop.pool as `0x${string}`,
+    inputToken: hop.inputToken as `0x${string}`,
+    outputToken: hop.outputToken as `0x${string}`,
+    feePips: hop.feePips,
+    inputPercentage: hop.inputPercentage,
+    outputPercentage: hop.outputPercentage,
+  }));
+
+  // Step 3: Call the on-chain quote function
+  if (type === "exactIn") {
+    const { result } = await publicClient.simulateContract({
+      address: SPLIT_ROUTER,
+      abi: splitRouterAbi,
+      functionName: "quoteExactInput",
+      args: [
+        {
+          inputAmount: BigInt(amount),
+          minOutputAmount: 0n,
+          deadline: 0n,
+          unwrap: false,
+          route,
+        },
+      ],
+    });
+
+    const [inputAmount, outputAmount, impactPips] = result;
+    return { inputAmount, outputAmount, impactPips };
+  } else {
+    const { result } = await publicClient.simulateContract({
+      address: SPLIT_ROUTER,
+      abi: splitRouterAbi,
+      functionName: "quoteExactOutput",
+      args: [
+        {
+          outputAmount: BigInt(amount),
+          maxInputAmount: 0n,
+          deadline: 0n,
+          unwrap: false,
+          route,
+        },
+      ],
+    });
+
+    const [inputAmount, outputAmount, impactPips] = result;
+    return { inputAmount, outputAmount, impactPips };
+  }
+}
+
+// Usage
+const quote = await getQuote(
+  "0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7", // WSEI
+  "0x3894085Ef7Ff0f0aEDf52E2A2704928d1Ec074F2", // Token B
+  "1000000000000000000", // 1 token in wei
+  "exactIn"
+);
+
+console.log("Output amount:", quote.outputAmount.toString());
+console.log("Price impact (pips):", quote.impactPips.toString());
+```
+
+<Warning>
+  The route returned by the API may change between calls as liquidity shifts. Always fetch a fresh route before quoting.
+</Warning>

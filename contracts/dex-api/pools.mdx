@@ -1,0 +1,364 @@
+---
+title: "Pools"
+description: "Liquidity pool data, statistics, transactions, and activity"
+---
+
+## List Pools
+
+```
+GET https://sei-api.dragonswap.app/api/v1/pools
+```
+
+Returns all liquidity pools above the minimum TVL threshold, along with their tokens and active incentives.
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Array of tokens present in the returned pools. Each token contains:
+  - `address` (string) — Token contract address
+  - `name` (string) — Token name
+  - `symbol` (string) — Token symbol
+  - `usd_price` (number) — Current USD price
+  - `decimals` (number) — Token decimals
+</ResponseField>
+
+<ResponseField name="incentives" type="array">
+  Active incentive programs for the pools. Each incentive contains:
+  - `start_time` (number) — Incentive start timestamp
+  - `end_time` (number) — Incentive end timestamp
+  - `reward` (number) — Reward amount
+  - `reward_token` (string) — Reward token address
+  - `refundee` (string) — Refund-eligible address
+  - `pool` (string) — Associated pool address
+  - `incentive_id` (string) — Unique incentive ID
+  - `apr` (number) — Annual percentage rate
+  - `title` (string) — Incentive title
+  - `liquidity_usd` (number) — Liquidity value in USD
+  - `owner` (string) — Incentive owner address
+  - `campaign` (string) — Campaign identifier
+</ResponseField>
+
+<ResponseField name="pools" type="array">
+  Array of pool objects. Each pool contains:
+  - `pool_address` (string) — Pool contract address
+  - `token0_address` (string) — First token address
+  - `token1_address` (string) — Second token address
+  - `first_token_reserve` (number) — First token reserve amount
+  - `second_token_reserve` (number) — Second token reserve amount
+  - `liquidity` (number) — USD liquidity value
+  - `daily_volume` (number) — Daily USD trading volume
+  - `daily_fees` (number) — Daily USD fees
+  - `type` (string) — `"V3_POOL"` or `"V2_POOL"`
+  - `fee_tier` (number) — Fee tier percentage
+  - `booster_farm_address` (string | null) — Associated booster farm address
+  - `incentive_id` (string | null) — Associated incentive ID
+  - `apy_booster` (number) — Booster APY
+  - `apr` (number) — Annual percentage rate (rounded to 5 decimals)
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://sei-api.dragonswap.app/api/v1/pools"
+```
+
+```javascript JavaScript
+const response = await fetch("https://sei-api.dragonswap.app/api/v1/pools");
+const data = await response.json();
+
+console.log(`Found ${data.pools.length} pools`);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "tokens": [
+    {
+      "address": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "name": "USDC",
+      "symbol": "USDC",
+      "usd_price": 1.0,
+      "decimals": 6
+    },
+    {
+      "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "name": "Wrapped SEI",
+      "symbol": "WSEI",
+      "usd_price": 0.0635608432630412,
+      "decimals": 18
+    }
+  ],
+  "incentives": [
+    {
+      "start_time": 1740750000,
+      "end_time": 1743454800,
+      "reward": 317500,
+      "reward_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "refundee": "0xe0b1e2468c687ea19652d85d89a81254d657a494",
+      "pool": "0x69e2edd60bbcd42fd5ed549599de249a9a34b98b",
+      "incentive_id": "0x6a785d3a701decf7668d554ce30c55f0dbaef2ac...",
+      "apr": "7627.9479464675",
+      "title": "WETH / USDC",
+      "liquidity_usd": "0",
+      "owner": null,
+      "campaign": null
+    }
+  ],
+  "pools": [
+    {
+      "pool_address": "0x95e351f268918cf85391857d91f3f63cd04215d5",
+      "token0_address": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "token1_address": "0xb75d0b03c06a926e488e2659df1a861f860bd3d1",
+      "first_token_reserve": 4.869369,
+      "second_token_reserve": 10.245071,
+      "liquidity": 15.11444,
+      "daily_volume": 11.213732,
+      "daily_fees": 0.033641,
+      "type": "V3_POOL",
+      "fee_tier": 0.3,
+      "booster_farm_address": null,
+      "incentive_id": null,
+      "apy_booster": 0,
+      "apr": 81.24043
+    },
+    {
+      "pool_address": "0xb115d2a02d55668290019a3617c6030cfb764200",
+      "token0_address": "0x7cb9b811fdf306c86b9dc3a4fdffd25da6c53fe1",
+      "token1_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_token_reserve": 466583.150779,
+      "second_token_reserve": 48042.88255,
+      "liquidity": 6071.14468,
+      "daily_volume": 0,
+      "daily_fees": 0,
+      "type": "V2_POOL",
+      "fee_tier": 0.3,
+      "booster_farm_address": null,
+      "incentive_id": null,
+      "apy_booster": 0,
+      "apr": 0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Get Pool
+
+```
+GET https://sei-api.dragonswap.app/api/v1/pools/{address}
+```
+
+Returns details for a single pool, including its associated incentives.
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  Pool contract address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="pools" type="object">
+  Single pool object with the same fields as the list endpoint.
+</ResponseField>
+
+<ResponseField name="incentives" type="array">
+  Incentives associated with this specific pool.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://sei-api.dragonswap.app/api/v1/pools/{address}"
+```
+</RequestExample>
+
+---
+
+## Pool Stats
+
+```
+GET https://sei-api.dragonswap.app/api/v1/pools/{address}/stats
+```
+
+Returns historical statistics for a pool across multiple time periods.
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  Pool contract address
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="weekly" type="number">
+  Max records for weekly period (default/max: 100)
+</ParamField>
+
+<ParamField query="monthly" type="number">
+  Max records for monthly period (default/max: 200)
+</ParamField>
+
+<ParamField query="all_time" type="number">
+  Max records for all-time period (default/max: 500)
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Object containing stat arrays for each time period:
+  - `daily` — Last 24 hours
+  - `weekly` — Last 7 days (sampled)
+  - `monthly` — Last 30 days (sampled)
+  - `all_time` — Last year (sampled)
+
+  Each entry contains:
+  - `liquidity` (number) — USD liquidity at snapshot time
+  - `daily_volume` (number) — USD volume at snapshot time
+  - `created_at` (number) — Unix timestamp of the snapshot
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://sei-api.dragonswap.app/api/v1/pools/{address}/stats"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "stats": {
+    "daily": [
+      { "liquidity": 350000.0, "daily_volume": 45000.0, "created_at": 1709913600 }
+    ],
+    "weekly": [],
+    "monthly": [],
+    "all_time": []
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Pool Transactions
+
+```
+GET https://sei-api.dragonswap.app/api/v1/pools/{address}/transactions
+```
+
+Returns swap transactions for a specific pool, along with aggregate trading stats.
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  Pool contract address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="transactions" type="array">
+  Array of swap transactions. Each contains:
+  - `pool_address` (string) — Pool contract address
+  - `first_token_address` (string) — First token in the swap
+  - `second_token_address` (string) — Second token in the swap
+  - `first_amount_token` (string) — Amount of first token
+  - `second_amount_token` (string) — Amount of second token
+  - `block_number` (number) — Block number
+  - `tx_hash` (string) — Transaction hash
+  - `from` (string) — Wallet that initiated the swap
+  - `total_value` (number) — Transaction USD value
+  - `type` (string) — `"Swap"`
+  - `action` (string) — `"Buy"` or `"Sell"`
+  - `created_at` (number) — Unix timestamp
+  - `pool_type` (string) — Pool version (V2 or V3)
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Aggregate trading statistics:
+  - `tx_count` (number) — Total transaction count
+  - `buy_volume_usd` (number) — Total buy volume in USD
+  - `sell_volume_usd` (number) — Total sell volume in USD
+  - `total_volume_usd` (number) — Combined volume
+  - `total_buys_count` (number) — Number of buy transactions
+  - `total_sells_count` (number) — Number of sell transactions
+  - `buyers_count` (number) — Unique buyer wallets
+  - `sellers_count` (number) — Unique seller wallets
+  - `makers_count` (number) — Total unique wallets
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://sei-api.dragonswap.app/api/v1/pools/{address}/transactions"
+```
+</RequestExample>
+
+---
+
+## Pool Activity
+
+```
+GET https://sei-api.dragonswap.app/api/v1/pools/{address}/activity
+```
+
+Returns paginated pool activity (swaps, mints, burns) using block number cursors.
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  Pool contract address
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="swaps_from_block" type="number">
+  Return swaps from this block number onwards (default: `0`)
+</ParamField>
+
+<ParamField query="mints_from_block" type="number">
+  Return mints from this block number onwards (default: `0`)
+</ParamField>
+
+<ParamField query="burns_from_block" type="number">
+  Return burns from this block number onwards (default: `0`)
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="swaps" type="array">
+  Array of swap transactions (same fields as Pool Transactions).
+</ResponseField>
+
+<Info>
+  Results are limited to 500 per request. Use the `block_number` from the last result as the cursor for the next page.
+</Info>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://sei-api.dragonswap.app/api/v1/pools/{address}/activity?\
+swaps_from_block=0&mints_from_block=0&burns_from_block=0"
+```
+</RequestExample>
