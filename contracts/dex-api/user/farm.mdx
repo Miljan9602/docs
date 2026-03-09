@@ -1,0 +1,76 @@
+---
+title: "User Single Farm"
+description: "A user's position and history for a specific farm"
+api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/farms/{farm}"
+---
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  User wallet address
+</ParamField>
+
+<ParamField path="farm" type="string" required default="0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9">
+  Farm contract address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Tokens associated with this farm. Each entry includes `address`, `name`, `symbol`, `usd_price`, and `decimals`.
+</ResponseField>
+
+<ResponseField name="farm" type="object">
+  Farm details including `farm_address`, `pooled_token_address`, `reward_token_address`, `booster_token_address`, `apy`, `tvl`, `type`, `unlock_rate`, `booster_unlock_rate`, `is_lp_pooled_token`, `end_timestamp`, `start_timestamp`, `total_rewards_usd`, `campaign`, `is_funded`.
+</ResponseField>
+
+<ResponseField name="history" type="array">
+  User's interaction history with this farm. Each entry includes `timestamp`, `amount`, `user`, `type` (`"deposits"`, `"withdraws"`, or `"payouts"`), `pooled_token_address`, `block_number`, `farm_address`, and `tx_hash`. Payout entries additionally include `reward_token_claim` and `booster_token_claim`.
+</ResponseField>
+
+<ResponseField name="payouts" type="object">
+  Aggregate payout totals with `reward_token_claims` and `total_booster_claims`.
+</ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "tokens": [
+    {
+      "address": "0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1",
+      "name": "MILLI",
+      "symbol": "MILLI",
+      "usd_price": 0.0000014167,
+      "decimals": 6
+    }
+  ],
+  "farm": {
+    "farm_address": "0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9",
+    "pooled_token_address": "0xf1d35df54a1247b047a52f8acc2359b415ba8a9a",
+    "reward_token_address": "0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1",
+    "booster_token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+    "apy": 99.056,
+    "is_lp_pooled_token": true,
+    "tvl": 114.757,
+    "type": "boosted",
+    "end_timestamp": 1756036800,
+    "start_timestamp": 1752580800,
+    "total_rewards_usd": 13589.33,
+    "campaign": null,
+    "is_funded": null,
+    "unlock_rate": 199.074074,
+    "booster_unlock_rate": 0.023148
+  },
+  "history": [],
+  "payouts": {
+    "reward_token_claims": 32020352.35,
+    "total_booster_claims": 3723.296
+  }
+}
+```
+</ResponseExample>

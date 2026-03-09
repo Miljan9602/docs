@@ -1,0 +1,66 @@
+---
+title: "Approved Tokens"
+description: "Returns tokens from the official Dragonswap token list"
+api: "GET https://sei-api.dragonswap.app/api/v1/tokens/approved"
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Array of approved token objects.
+
+  <Expandable title="Token object">
+    <ResponseField name="address" type="string">
+      Token contract address.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Token name.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Token ticker symbol.
+    </ResponseField>
+    <ResponseField name="usd_price" type="number">
+      Current USD price.
+    </ResponseField>
+    <ResponseField name="decimals" type="number">
+      Token decimal places.
+    </ResponseField>
+    <ResponseField name="liquidity" type="number">
+      Total liquidity in USD.
+    </ResponseField>
+    <ResponseField name="daily_volume" type="number">
+      Trading volume over the last 24 hours in USD.
+    </ResponseField>
+    <ResponseField name="daily_transactions" type="number">
+      Number of transactions over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="description" type="string|null">
+      Token description, if available.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "tokens": [
+    {
+      "address": "0x76d469a747327ee2de4fbdf50d59ddd1145683e6",
+      "name": "Infinity Games",
+      "symbol": "INFY",
+      "usd_price": 0.0012018384525665,
+      "decimals": 18,
+      "liquidity": 3284.1633200932,
+      "daily_volume": 0.018027576788497,
+      "daily_transactions": 139,
+      "description": null
+    }
+  ]
+}
+```
+</ResponseExample>

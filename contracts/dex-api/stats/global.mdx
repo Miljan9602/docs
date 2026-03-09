@@ -1,0 +1,100 @@
+---
+title: "Global Stats"
+description: "Aggregate statistics for the DEX"
+api: "GET https://sei-api.dragonswap.app/api/v1/stats"
+---
+
+Returns aggregate statistics for the DragonSwap DEX, including total volume, liquidity, swap counts, user counts, 24-hour metrics, and hourly data.
+
+This endpoint requires no parameters.
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Container for DEX statistics.
+
+  <Expandable title="stats">
+    <ResponseField name="v2" type="object">
+      V2 protocol statistics.
+
+      <Expandable title="v2">
+        <ResponseField name="total_volume_usd" type="number">
+          Total cumulative trading volume in USD.
+        </ResponseField>
+        <ResponseField name="total_liquidity_usd" type="number">
+          Current total liquidity in USD.
+        </ResponseField>
+        <ResponseField name="total_number_of_swaps" type="number">
+          Total number of swaps executed.
+        </ResponseField>
+        <ResponseField name="total_users_count" type="number">
+          Total number of unique users.
+        </ResponseField>
+        <ResponseField name="24_hour_tx_count" type="number">
+          Number of transactions in the last 24 hours.
+        </ResponseField>
+        <ResponseField name="24_hour_fees_usd" type="number">
+          Fees collected in the last 24 hours in USD.
+        </ResponseField>
+        <ResponseField name="24_hour_volume_usd" type="number">
+          Trading volume in the last 24 hours in USD.
+        </ResponseField>
+        <ResponseField name="hourly_data" type="array">
+          Array of hourly snapshots.
+
+          <Expandable title="hourly_data item">
+            <ResponseField name="created_at" type="number">
+              Unix timestamp for the hourly snapshot.
+            </ResponseField>
+            <ResponseField name="volume_usd" type="number">
+              Trading volume in USD for the hour.
+            </ResponseField>
+            <ResponseField name="total_liquidity_usd" type="number">
+              Total liquidity in USD at the snapshot time.
+            </ResponseField>
+            <ResponseField name="inflows_usd" type="number">
+              Liquidity inflows in USD for the hour.
+            </ResponseField>
+            <ResponseField name="outflows_usd" type="number">
+              Liquidity outflows in USD for the hour.
+            </ResponseField>
+            <ResponseField name="fees_usd" type="number">
+              Fees collected in USD for the hour.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "stats": {
+    "v2": {
+      "total_volume_usd": 199150095.23766,
+      "total_liquidity_usd": 1973531.33,
+      "total_number_of_swaps": 3498778,
+      "total_users_count": 320770,
+      "24_hour_tx_count": 1956,
+      "24_hour_fees_usd": 19.557,
+      "24_hour_volume_usd": 6504.625,
+      "hourly_data": [
+        {
+          "created_at": 1757419200,
+          "volume_usd": 2596.40,
+          "total_liquidity_usd": 2104904.03,
+          "inflows_usd": 0,
+          "outflows_usd": 0,
+          "fees_usd": 7.79
+        }
+      ]
+    }
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,46 @@
+---
+title: "Farm Stats"
+description: "Historical statistics for a farm across multiple time periods"
+api: "GET https://sei-api.dragonswap.app/api/v1/farms/{address}/stats"
+---
+
+### Path Parameters
+
+<ParamField path="address" type="string" required default="0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9">
+  Farm contract address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Object containing stat arrays for each time period:
+  - `daily` — Last 24 hours
+  - `weekly` — Last 7 days (up to 168 records)
+  - `monthly` — Last 30 days (up to 720 records)
+  - `all_time` — Historical (up to 1000 records)
+
+  Each snapshot contains:
+  - `created_at` (number) — Unix timestamp
+  - `deposits` (number) — Total deposits
+  - `deposits_usd` (number) — Total deposits in USD
+</ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "stats": {
+    "daily": [
+      { "created_at": 1709913600, "deposits": 50000.0, "deposits_usd": 17500.0 }
+    ],
+    "weekly": [],
+    "monthly": [],
+    "all_time": []
+  }
+}
+```
+</ResponseExample>

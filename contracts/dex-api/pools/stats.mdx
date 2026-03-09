@@ -1,0 +1,101 @@
+---
+title: "Pool Stats"
+description: "Historical statistics for a pool across multiple time periods"
+api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/stats"
+---
+
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
+  Pool contract address.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="weekly" type="number">
+  Number of weekly data points to return. Maximum `100`.
+</ParamField>
+
+<ParamField query="monthly" type="number">
+  Number of monthly data points to return. Maximum `200`.
+</ParamField>
+
+<ParamField query="all_time" type="number">
+  Number of all-time data points to return. Maximum `500`.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Statistics grouped by time period.
+
+  <Expandable title="Stats object">
+    <ResponseField name="daily" type="array">
+      Array of daily stat entries.
+
+      <Expandable title="Stat entry">
+        <ResponseField name="liquidity" type="number">
+          Pool liquidity in USD at the recorded time.
+        </ResponseField>
+        <ResponseField name="daily_volume" type="number">
+          Trading volume in USD for the period.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          Timestamp of the data point.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="weekly" type="array">
+      Array of weekly stat entries.
+
+      <Expandable title="Stat entry">
+        <ResponseField name="liquidity" type="number">
+          Pool liquidity in USD at the recorded time.
+        </ResponseField>
+        <ResponseField name="daily_volume" type="number">
+          Trading volume in USD for the period.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          Timestamp of the data point.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="monthly" type="array">
+      Array of monthly stat entries.
+
+      <Expandable title="Stat entry">
+        <ResponseField name="liquidity" type="number">
+          Pool liquidity in USD at the recorded time.
+        </ResponseField>
+        <ResponseField name="daily_volume" type="number">
+          Trading volume in USD for the period.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          Timestamp of the data point.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="all_time" type="array">
+      Array of all-time stat entries.
+
+      <Expandable title="Stat entry">
+        <ResponseField name="liquidity" type="number">
+          Pool liquidity in USD at the recorded time.
+        </ResponseField>
+        <ResponseField name="daily_volume" type="number">
+          Trading volume in USD for the period.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          Timestamp of the data point.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>

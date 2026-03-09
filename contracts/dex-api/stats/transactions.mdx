@@ -1,0 +1,115 @@
+---
+title: "Transactions"
+description: "Recent transactions with associated token data"
+api: "GET https://sei-api.dragonswap.app/api/v1/transactions"
+---
+
+Returns recent transactions on the DragonSwap DEX along with metadata for all tokens involved.
+
+This endpoint requires no parameters.
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Array of token objects referenced by the transactions.
+
+  <Expandable title="token item">
+    <ResponseField name="address" type="string">
+      Contract address of the token.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full name of the token.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Ticker symbol of the token.
+    </ResponseField>
+    <ResponseField name="usd_price" type="number">
+      Current price of the token in USD.
+    </ResponseField>
+    <ResponseField name="decimals" type="number">
+      Number of decimal places for the token.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="transactions" type="array">
+  Array of recent transaction objects.
+
+  <Expandable title="transaction item">
+    <ResponseField name="pool_address" type="string">
+      Address of the liquidity pool.
+    </ResponseField>
+    <ResponseField name="first_token_address" type="string">
+      Contract address of the first token in the pair.
+    </ResponseField>
+    <ResponseField name="second_token_address" type="string">
+      Contract address of the second token in the pair.
+    </ResponseField>
+    <ResponseField name="first_amount_token" type="number">
+      Amount of the first token involved in the transaction.
+    </ResponseField>
+    <ResponseField name="second_amount_token" type="number">
+      Amount of the second token involved in the transaction.
+    </ResponseField>
+    <ResponseField name="block_number" type="number">
+      Block number in which the transaction was included.
+    </ResponseField>
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash.
+    </ResponseField>
+    <ResponseField name="from" type="string">
+      Address of the transaction sender.
+    </ResponseField>
+    <ResponseField name="total_value" type="number">
+      Total value of the transaction in USD.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Transaction type (e.g., `Swap`).
+    </ResponseField>
+    <ResponseField name="action" type="string">
+      Transaction action — `Buy` or `Sell`.
+    </ResponseField>
+    <ResponseField name="created_at" type="number">
+      Unix timestamp of the transaction.
+    </ResponseField>
+    <ResponseField name="pool_type" type="string">
+      Pool version — `v2` or `v3`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "tokens": [
+    {
+      "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "name": "Wrapped SEI",
+      "symbol": "WSEI",
+      "usd_price": 0.0635608432630412,
+      "decimals": 18
+    }
+  ],
+  "transactions": [
+    {
+      "pool_address": "0x1e7ade0350e9435cedf0a9a87a8983bbbacabf2a",
+      "first_token_address": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+      "second_token_address": "0x160345fc359604fc6e70e3c5facbde5f7a9342d8",
+      "first_amount_token": 51.767493,
+      "second_amount_token": 0.026035,
+      "block_number": 197278168,
+      "tx_hash": "0x87bf92c8347f825ae6e20a7cb5a4e99113bc9bfc1425d29bb694578f256dc878",
+      "from": "0x4cd934beae89200b3e5f16783897c9424e25f3df",
+      "total_value": 51.73,
+      "type": "Swap",
+      "action": "Buy",
+      "created_at": 1773056249,
+      "pool_type": "v3"
+    }
+  ]
+}
+```
+</ResponseExample>

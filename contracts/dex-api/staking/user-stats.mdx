@@ -1,0 +1,48 @@
+---
+title: "User Staking Stats"
+description: "Aggregated staking statistics for a specific user"
+api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/stats/{user}"
+---
+
+<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+<ParamField path="user" type="string" required>
+  User wallet address
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="stats" type="object|null">
+  User staking statistics, or null if the user has no staking history
+
+  <Expandable title="Stats object properties">
+    <ResponseField name="total_DRG_earned" type="number">
+      Total DRG tokens earned by the user
+    </ResponseField>
+
+    <ResponseField name="total_USDC_earned" type="number">
+      Total USDC earned by the user
+    </ResponseField>
+
+    <ResponseField name="total_staked" type="number">
+      Total amount currently staked by the user
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "stats": {
+    "total_DRG_earned": 1250.75,
+    "total_USDC_earned": 89.32,
+    "total_staked": 50000.0
+  }
+}
+```
+</ResponseExample>

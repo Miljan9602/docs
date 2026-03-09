@@ -1,0 +1,42 @@
+---
+title: "Volume"
+description: "Daily volume statistics for a wallet address"
+api: "GET https://sei-api.dragonswap.app/api/v1/vol"
+---
+
+Returns daily volume statistics for a specific wallet address, including trading volume, swap fees, and transaction count per day.
+
+<ParamField query="address" type="string" required>
+  Wallet address to query volume for.
+</ParamField>
+
+The response is an object keyed by date strings (`YYYY-MM-DD`). Each value contains:
+
+<ResponseField name="volume_usd" type="number">
+  Total trading volume in USD for the day.
+</ResponseField>
+
+<ResponseField name="swap_fee_usd" type="number">
+  Total swap fees in USD for the day.
+</ResponseField>
+
+<ResponseField name="count" type="number">
+  Number of transactions for the day.
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "2025-12-10": {
+    "volume_usd": 402.498,
+    "swap_fee_usd": 1.207,
+    "count": 5
+  },
+  "2025-12-23": {
+    "volume_usd": 1809.183,
+    "swap_fee_usd": 5.276,
+    "count": 10
+  }
+}
+```
+</ResponseExample>

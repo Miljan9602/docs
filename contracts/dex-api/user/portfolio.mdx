@@ -1,0 +1,82 @@
+---
+title: "User Portfolio"
+description: "Portfolio overview including historical value, token holdings, and total USD value"
+api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/portfolio"
+---
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  User wallet address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Metadata including `native_token_usd_price` and `change` object with `hourly`, `daily`, `weekly`, and `monthly` percentage changes.
+</ResponseField>
+
+<ResponseField name="portfolio_history" type="array">
+  Historical snapshots of the user's portfolio. Each entry contains `timestamp` (Unix seconds), `liquidity_usd`, and `farm_balance_usd`.
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Token holdings. Each entry includes `address`, `name`, `symbol`, `usd_price`, `decimals`, `change` object (with `hourly`, `daily`, `weekly`, `monthly`), and `user_balance`.
+</ResponseField>
+
+<ResponseField name="total_usd_value" type="number">
+  Total portfolio value in USD.
+</ResponseField>
+
+<ResponseField name="native_token" type="object">
+  The user's native token (SEI) holding with `balance` and `usd_price`.
+</ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "meta": {
+    "native_token_usd_price": 0.0619481035298862,
+    "change": {
+      "hourly": 0.545686,
+      "daily": -3.327896,
+      "weekly": -8.277174,
+      "monthly": -15.176536
+    }
+  },
+  "portfolio_history": [
+    {
+      "timestamp": 1773057445,
+      "liquidity_usd": 0,
+      "farm_balance_usd": 0
+    }
+  ],
+  "tokens": [
+    {
+      "address": "0xc257361320f4514d91c05f461006ce6a0300e2d2",
+      "name": "Splashing SEI",
+      "symbol": "spSEI",
+      "usd_price": 0.0635608432630412,
+      "decimals": 18,
+      "change": {
+        "hourly": 0.250803,
+        "daily": -2.788041,
+        "weekly": -9.525654,
+        "monthly": -16.871257
+      },
+      "user_balance": 0.7125725497900179
+    }
+  ],
+  "total_usd_value": 291.88392573551147,
+  "native_token": {
+    "balance": 0.8041098752397658,
+    "usd_price": 0.0619481035298862
+  }
+}
+```
+</ResponseExample>

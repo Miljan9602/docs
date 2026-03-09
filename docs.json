@@ -117,17 +117,82 @@
                 ]
               },
               {
-                "group": "API",
+                "group": "Quote",
                 "pages": [
-                  "contracts/dex-api/quote",
-                  "contracts/dex-api/pools",
-                  "contracts/dex-api/tokens",
-                  "contracts/dex-api/stats",
-                  "contracts/dex-api/farms",
-                  "contracts/dex-api/staking",
-                  "contracts/dex-api/user",
-                  "contracts/dex-api/incentives",
-                  "contracts/dex-api/airdrops"
+                  "contracts/dex-api/quote"
+                ]
+              },
+              {
+                "group": "Pools",
+                "pages": [
+                  "contracts/dex-api/pools/list",
+                  "contracts/dex-api/pools/get",
+                  "contracts/dex-api/pools/stats",
+                  "contracts/dex-api/pools/transactions",
+                  "contracts/dex-api/pools/activity"
+                ]
+              },
+              {
+                "group": "Tokens",
+                "pages": [
+                  "contracts/dex-api/tokens/list",
+                  "contracts/dex-api/tokens/approved",
+                  "contracts/dex-api/tokens/get",
+                  "contracts/dex-api/tokens/stats"
+                ]
+              },
+              {
+                "group": "Stats & Transactions",
+                "pages": [
+                  "contracts/dex-api/stats/global",
+                  "contracts/dex-api/stats/transactions",
+                  "contracts/dex-api/stats/volume"
+                ]
+              },
+              {
+                "group": "Farms",
+                "pages": [
+                  "contracts/dex-api/farms/list",
+                  "contracts/dex-api/farms/get",
+                  "contracts/dex-api/farms/history",
+                  "contracts/dex-api/farms/stats"
+                ]
+              },
+              {
+                "group": "Staking",
+                "pages": [
+                  "contracts/dex-api/staking/info",
+                  "contracts/dex-api/staking/emissions",
+                  "contracts/dex-api/staking/rewards",
+                  "contracts/dex-api/staking/stats",
+                  "contracts/dex-api/staking/activity",
+                  "contracts/dex-api/staking/user-stats"
+                ]
+              },
+              {
+                "group": "User Data",
+                "pages": [
+                  "contracts/dex-api/user/pools",
+                  "contracts/dex-api/user/portfolio",
+                  "contracts/dex-api/user/farms",
+                  "contracts/dex-api/user/farm",
+                  "contracts/dex-api/user/staking"
+                ]
+              },
+              {
+                "group": "Incentives",
+                "pages": [
+                  "contracts/dex-api/incentives/list",
+                  "contracts/dex-api/incentives/tokens",
+                  "contracts/dex-api/incentives/user"
+                ]
+              },
+              {
+                "group": "Airdrops",
+                "pages": [
+                  "contracts/dex-api/airdrops/list",
+                  "contracts/dex-api/airdrops/get",
+                  "contracts/dex-api/airdrops/user"
                 ]
               }
             ]
@@ -150,7 +215,7 @@
   "api": {
     "baseUrl": "https://dev-rfq.saphyre.xyz",
     "playground": {
-      "mode": "show"
+      "display": "interactive"
     }
   },
   "appearance": {

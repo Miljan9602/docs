@@ -1,0 +1,79 @@
+---
+title: "Staking Stats"
+description: "Historical staking statistics across multiple time periods"
+api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/stats"
+---
+
+<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="total_staked" type="number">
+  Total amount currently staked
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Historical statistics grouped by time period
+
+  <Expandable title="Stats object properties">
+    <ResponseField name="daily" type="object[]">
+      Daily statistics entries
+
+      <Expandable title="Daily entry properties">
+        <ResponseField name="total_deposits" type="number">
+          Total deposits for the period
+        </ResponseField>
+
+        <ResponseField name="total_deposits_usd" type="number">
+          Total deposits in USD
+        </ResponseField>
+
+        <ResponseField name="total_fees" type="number">
+          Total fees collected
+        </ResponseField>
+
+        <ResponseField name="apr" type="number">
+          Annual percentage rate
+        </ResponseField>
+
+        <ResponseField name="created_at" type="number">
+          Unix timestamp of the stats snapshot
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="weekly" type="object[]">
+      Weekly statistics entries (same shape as daily)
+    </ResponseField>
+
+    <ResponseField name="monthly" type="object[]">
+      Monthly statistics entries (same shape as daily)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "total_staked": 25182898.98,
+  "stats": {
+    "daily": [
+      {
+        "total_deposits": 25176799.274119,
+        "total_deposits_usd": 425155.73,
+        "total_fees": 13126.065,
+        "apr": 235.207,
+        "created_at": 1772971810
+      }
+    ],
+    "weekly": [],
+    "monthly": []
+  }
+}
+```
+</ResponseExample>

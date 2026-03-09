@@ -1,0 +1,109 @@
+---
+title: "Get Pool"
+description: "Returns details for a single pool"
+api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}"
+---
+
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
+  Pool contract address.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="pools" type="object">
+  Pool details object.
+
+  <Expandable title="Pool object">
+    <ResponseField name="pool_address" type="string">
+      Contract address of the pool.
+    </ResponseField>
+    <ResponseField name="token0_address" type="string">
+      Address of the first token in the pair.
+    </ResponseField>
+    <ResponseField name="token1_address" type="string">
+      Address of the second token in the pair.
+    </ResponseField>
+    <ResponseField name="first_token_reserve" type="number">
+      Reserve amount of the first token.
+    </ResponseField>
+    <ResponseField name="second_token_reserve" type="number">
+      Reserve amount of the second token.
+    </ResponseField>
+    <ResponseField name="liquidity" type="number">
+      Total pool liquidity in USD.
+    </ResponseField>
+    <ResponseField name="daily_volume" type="number">
+      24-hour trading volume in USD.
+    </ResponseField>
+    <ResponseField name="daily_fees" type="number">
+      24-hour fees collected in USD.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Pool type: `V3_POOL` or `V2_POOL`.
+    </ResponseField>
+    <ResponseField name="fee_tier" type="number">
+      Fee tier percentage for the pool.
+    </ResponseField>
+    <ResponseField name="booster_farm_address" type="string">
+      Address of the associated booster farm, if any.
+    </ResponseField>
+    <ResponseField name="incentive_id" type="string">
+      Associated incentive identifier, if any.
+    </ResponseField>
+    <ResponseField name="apy_booster" type="number">
+      APY boost from the booster farm.
+    </ResponseField>
+    <ResponseField name="apr" type="number">
+      Annual percentage rate for the pool.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="incentives" type="array">
+  Array of incentive programs associated with this pool.
+
+  <Expandable title="Incentive object">
+    <ResponseField name="start_time" type="string">
+      Incentive program start time.
+    </ResponseField>
+    <ResponseField name="end_time" type="string">
+      Incentive program end time.
+    </ResponseField>
+    <ResponseField name="reward" type="string">
+      Total reward amount.
+    </ResponseField>
+    <ResponseField name="reward_token" type="string">
+      Address of the reward token.
+    </ResponseField>
+    <ResponseField name="refundee" type="string">
+      Address that receives unclaimed rewards.
+    </ResponseField>
+    <ResponseField name="pool" type="string">
+      Pool address the incentive applies to.
+    </ResponseField>
+    <ResponseField name="incentive_id" type="string">
+      Unique identifier of the incentive.
+    </ResponseField>
+    <ResponseField name="apr" type="number">
+      Annual percentage rate of the incentive.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Display title of the incentive program.
+    </ResponseField>
+    <ResponseField name="liquidity_usd" type="number">
+      Total liquidity in USD participating in the incentive.
+    </ResponseField>
+    <ResponseField name="owner" type="string">
+      Address of the incentive creator.
+    </ResponseField>
+    <ResponseField name="campaign" type="string">
+      Campaign identifier.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

@@ -1,0 +1,82 @@
+---
+title: "List Tokens"
+description: "Returns all tokens with liquidity above the minimum TVL threshold"
+api: "GET https://sei-api.dragonswap.app/api/v1/tokens"
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Array of token objects.
+
+  <Expandable title="Token object">
+    <ResponseField name="address" type="string">
+      Token contract address.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Token name.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Token ticker symbol.
+    </ResponseField>
+    <ResponseField name="usd_price" type="number">
+      Current USD price.
+    </ResponseField>
+    <ResponseField name="decimals" type="number">
+      Token decimal places.
+    </ResponseField>
+    <ResponseField name="liquidity" type="number">
+      Total liquidity in USD.
+    </ResponseField>
+    <ResponseField name="description" type="string|null">
+      Token description, if available.
+    </ResponseField>
+    <ResponseField name="change" type="object">
+      Price change percentages over various timeframes.
+
+      <Expandable title="Change object">
+        <ResponseField name="hourly" type="number">
+          Hourly price change percentage.
+        </ResponseField>
+        <ResponseField name="daily" type="number">
+          Daily price change percentage.
+        </ResponseField>
+        <ResponseField name="weekly" type="number">
+          Weekly price change percentage.
+        </ResponseField>
+        <ResponseField name="monthly" type="number">
+          Monthly price change percentage.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "tokens": [
+    {
+      "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "name": "Wrapped SEI",
+      "symbol": "WSEI",
+      "usd_price": 0.0635608432630412,
+      "decimals": 18,
+      "liquidity": 1511595.85,
+      "description": null,
+      "change": {
+        "hourly": 0.250803,
+        "daily": -2.788041,
+        "weekly": -9.525654,
+        "monthly": -16.871257
+      }
+    }
+  ]
+}
+```
+</ResponseExample>

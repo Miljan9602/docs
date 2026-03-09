@@ -1,0 +1,53 @@
+---
+title: "Staking Activity"
+description: "A user's staking activity including rewards, events, marketplace actions, and bonuses"
+api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/activity/{user}"
+---
+
+<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+<ParamField path="user" type="string" required>
+  User wallet address
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  User activity data
+
+  <Expandable title="Data object properties">
+    <ResponseField name="reward_activity" type="object[]">
+      Array of reward activity records
+    </ResponseField>
+
+    <ResponseField name="staking_activity" type="object[]">
+      Array of staking event records
+    </ResponseField>
+
+    <ResponseField name="marketplace_activity" type="object[]">
+      Array of marketplace action records
+    </ResponseField>
+
+    <ResponseField name="staking_bonus" type="object[]">
+      Array of staking bonus records
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "data": {
+    "reward_activity": [],
+    "staking_activity": [],
+    "marketplace_activity": [],
+    "staking_bonus": []
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,26 @@
+---
+title: "Incentive Tokens"
+description: "Token IDs associated with a specific incentive program"
+api: "GET https://sei-api.dragonswap.app/api/v1/incentives/{incentive_id}/tokens"
+---
+
+<ParamField path="incentive_id" type="string" required default="0x6a785d3a701decf7668d554ce30c55f0dbaef2ac1853e75a2044f8b70c3249fe">
+  Unique incentive identifier.
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="token_ids" type="array">
+  Array of token IDs staked in the incentive program.
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "token_ids": []
+}
+```
+</ResponseExample>

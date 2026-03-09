@@ -1,0 +1,76 @@
+---
+title: "Staking Emissions"
+description: "Staking deposit records for a staking contract"
+api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/emissions"
+---
+
+<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="deposits" type="object[]">
+  Array of deposit records
+
+  <Expandable title="Deposit object properties">
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash of the deposit
+    </ResponseField>
+
+    <ResponseField name="token_address" type="string">
+      Address of the deposited token
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+      Human-readable deposit amount
+    </ResponseField>
+
+    <ResponseField name="amount_wei" type="string">
+      Deposit amount in wei
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      Unix timestamp of the deposit
+    </ResponseField>
+
+    <ResponseField name="apr" type="number">
+      Annual percentage rate at the time of deposit
+    </ResponseField>
+
+    <ResponseField name="reward_per_usd_staked" type="number">
+      Reward earned per USD staked
+    </ResponseField>
+
+    <ResponseField name="token_usd_price" type="number">
+      USD price of the token at the time of deposit
+    </ResponseField>
+
+    <ResponseField name="buy_tx_hash" type="string|null">
+      Transaction hash of the token buy, if applicable
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "deposits": [
+    {
+      "tx_hash": "0x701a02ecbd8cdc39d776e4ea2bfb4da96357628849ddb6b69c86252215fb80c3",
+      "token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+      "amount": 116365.446014,
+      "amount_wei": "116365446014000000000000",
+      "created_at": "1772906415",
+      "apr": 229.66021502066,
+      "reward_per_usd_staked": 0.0045932043004003,
+      "token_usd_price": 0.017187232709559942,
+      "buy_tx_hash": null
+    }
+  ]
+}
+```
+</ResponseExample>

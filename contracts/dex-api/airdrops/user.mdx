@@ -1,0 +1,40 @@
+---
+title: "User Airdrop Allocation"
+description: "A user's airdrop eligibility and allocation amounts for a specific campaign"
+api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}/user/{user}"
+---
+
+<ParamField path="airdrop" type="string" required default="0xe418e8f4245de5e03456b36cb8ff4158f1324f90">
+  Airdrop contract address.
+</ParamField>
+
+<ParamField path="user" type="string" required>
+  User wallet address.
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="is_eligible" type="boolean">
+  Whether the user is eligible for the airdrop.
+</ResponseField>
+
+<ResponseField name="amounts" type="array">
+  Array of human-readable token amounts corresponding to each vesting period.
+</ResponseField>
+
+<ResponseField name="amounts_wei" type="array">
+  Array of token amounts in wei corresponding to each vesting period.
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "is_eligible": true,
+  "amounts": ["123.9", "53.1"],
+  "amounts_wei": ["123900000000000000000", "53100000000000000000"]
+}
+```
+</ResponseExample>

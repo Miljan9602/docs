@@ -1,0 +1,46 @@
+---
+title: "User Incentives"
+description: "Incentive program participation and rewards for a specific user"
+api: "GET https://sei-api.dragonswap.app/api/v1/incentives/user/{address}"
+---
+
+<ParamField path="address" type="string" required>
+  User wallet address.
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="staked_tokens" type="array">
+  Array of tokens the user has staked in incentive programs.
+</ResponseField>
+
+<ResponseField name="deposited_tokens" type="array">
+  Array of tokens the user has deposited.
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Array of token objects associated with the user's incentive positions.
+</ResponseField>
+
+<ResponseField name="incentives" type="array">
+  Array of incentive programs the user is participating in.
+</ResponseField>
+
+<ResponseField name="pools" type="array">
+  Array of liquidity pools related to the user's incentive positions.
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "staked_tokens": [],
+  "deposited_tokens": [],
+  "tokens": [],
+  "incentives": [],
+  "pools": []
+}
+```
+</ResponseExample>

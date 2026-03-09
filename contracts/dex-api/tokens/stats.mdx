@@ -1,0 +1,75 @@
+---
+title: "Token Stats"
+description: "Historical price, liquidity, and volume snapshots for a token"
+api: "GET https://sei-api.dragonswap.app/api/v1/tokens/{address}/stats"
+---
+
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7">
+  Token contract address.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Historical statistics grouped by timeframe.
+
+  <Expandable title="Stats object">
+    <ResponseField name="daily" type="array">
+      Daily snapshots.
+
+      <Expandable title="Snapshot object">
+        <ResponseField name="usd_price" type="number">
+          USD price at the time of the snapshot.
+        </ResponseField>
+        <ResponseField name="liquidity" type="number">
+          Total liquidity in USD at the time of the snapshot.
+        </ResponseField>
+        <ResponseField name="daily_volume" type="number">
+          Trading volume in USD for the snapshot period.
+        </ResponseField>
+        <ResponseField name="created_at" type="number">
+          Unix timestamp of the snapshot.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="weekly" type="array">
+      Weekly snapshots. Same structure as daily.
+    </ResponseField>
+
+    <ResponseField name="monthly" type="array">
+      Monthly snapshots. Same structure as daily.
+    </ResponseField>
+
+    <ResponseField name="all_time" type="array">
+      All-time snapshots. Same structure as daily.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "stats": {
+    "daily": [
+      {
+        "usd_price": 0.35,
+        "liquidity": 1200000.0,
+        "daily_volume": 85000.0,
+        "created_at": 1709913600
+      }
+    ],
+    "weekly": [],
+    "monthly": [],
+    "all_time": []
+  }
+}
+```
+</ResponseExample>

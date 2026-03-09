@@ -1,0 +1,133 @@
+---
+title: "Staking Rewards"
+description: "Protocol rewards, withdrawal fees, and marketplace fees"
+api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/rewards"
+---
+
+<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="fees" type="object">
+  Aggregated fee totals
+
+  <Expandable title="Fees object properties">
+    <ResponseField name="total_withdrawal_fees_drg" type="number">
+      Total withdrawal fees collected in DRG
+    </ResponseField>
+
+    <ResponseField name="total_marketplace_fees_drg" type="number">
+      Total marketplace fees collected in DRG
+    </ResponseField>
+
+    <ResponseField name="total_protocol_rewards_usd" type="number">
+      Total protocol rewards in USD
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="withdrawl_fees" type="object[]">
+  Array of withdrawal fee records
+
+  <Expandable title="Withdrawal fee object properties">
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      Unix timestamp of the fee event
+    </ResponseField>
+
+    <ResponseField name="drg_fee" type="number">
+      Fee amount in DRG
+    </ResponseField>
+
+    <ResponseField name="reward_per_usd_staked" type="number">
+      Reward earned per USD staked
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="marketplace_fees" type="object[]">
+  Array of marketplace fee records
+
+  <Expandable title="Marketplace fee object properties">
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      Unix timestamp of the fee event
+    </ResponseField>
+
+    <ResponseField name="drg_fee" type="number">
+      Fee amount in DRG
+    </ResponseField>
+
+    <ResponseField name="reward_per_usd_staked" type="number">
+      Reward earned per USD staked
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="protocol_rewards" type="object[]">
+  Array of protocol reward records
+
+  <Expandable title="Protocol reward object properties">
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash
+    </ResponseField>
+
+    <ResponseField name="token_address" type="string">
+      Address of the reward token
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+      Human-readable reward amount
+    </ResponseField>
+
+    <ResponseField name="amount_wei" type="string">
+      Reward amount in wei
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      Unix timestamp of the reward
+    </ResponseField>
+
+    <ResponseField name="apr" type="number">
+      Annual percentage rate
+    </ResponseField>
+
+    <ResponseField name="reward_per_usd_staked" type="number">
+      Reward earned per USD staked
+    </ResponseField>
+
+    <ResponseField name="token_usd_price" type="number">
+      USD price of the reward token
+    </ResponseField>
+
+    <ResponseField name="buy_tx_hash" type="string|null">
+      Transaction hash of the token buy, if applicable
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "fees": {
+    "total_withdrawal_fees_drg": 13876.229,
+    "total_marketplace_fees_drg": 138.327,
+    "total_protocol_rewards_usd": 277006.23
+  },
+  "withdrawl_fees": [],
+  "marketplace_fees": [],
+  "protocol_rewards": []
+}
+```
+</ResponseExample>

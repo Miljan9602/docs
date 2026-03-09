@@ -1,0 +1,34 @@
+---
+title: "User Staking"
+description: "A user's staking events for a specific staking contract"
+api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/stakings/{staker}"
+---
+
+### Path Parameters
+
+<ParamField path="address" type="string" required>
+  User wallet address
+</ParamField>
+
+<ParamField path="staker" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="events" type="array">
+  Staking events for this user on the specified staking contract.
+</ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "events": []
+}
+```
+</ResponseExample>

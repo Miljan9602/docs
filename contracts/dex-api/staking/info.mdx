@@ -1,0 +1,26 @@
+---
+title: "Staking Info"
+description: "Returns the next reward emission timestamps for a staking contract"
+api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}"
+---
+
+<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
+  Staking contract address
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Response status indicator
+</ResponseField>
+
+<ResponseField name="emission_timestamps" type="number[]">
+  Array of upcoming reward emission timestamps (Unix seconds)
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "emission_timestamps": [1709920800, 1710007200]
+}
+```
+</ResponseExample>

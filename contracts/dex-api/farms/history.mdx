@@ -1,0 +1,66 @@
+---
+title: "Farm History"
+description: "Transaction history for a farm (deposits, withdrawals, payouts)"
+api: "GET https://sei-api.dragonswap.app/api/v1/farms/{address}/history"
+---
+
+### Path Parameters
+
+<ParamField path="address" type="string" required default="0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9">
+  Farm contract address
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  `"ok"` on success
+</ResponseField>
+
+<ResponseField name="tokens" type="array">
+  Tokens associated with this farm (reward and booster tokens).
+</ResponseField>
+
+<ResponseField name="history" type="array">
+  Array of farm history events. Each contains:
+  - `timestamp` (number) — Unix timestamp
+  - `amount` (number) — Token amount (for deposits/withdrawals)
+  - `user` (string) — User wallet address
+  - `type` (string) — Event type: `"deposits"`, `"withdraws"`, or `"payouts"`
+  - `pooled_token_address` (string) — Pooled token address
+  - `block_number` (number) — Block number
+  - `farm_address` (string) — Farm contract address
+  - `tx_hash` (string) — Transaction hash
+
+  Payout events additionally include:
+  - `reward_token_claim` (number) — Reward tokens claimed
+  - `booster_token_claim` (number) — Booster tokens claimed (for boosted farms)
+</ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "tokens": [
+    {
+      "address": "0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1",
+      "name": "MILLI",
+      "symbol": "MILLI",
+      "usd_price": 0.0000014167,
+      "decimals": 6
+    }
+  ],
+  "history": [
+    {
+      "timestamp": 1771334895,
+      "amount": 9.862195,
+      "user": "0xdfdbf00cbf4dbe05150178a10a156ea599e53e29",
+      "type": "withdraws",
+      "pooled_token_address": "0xf1d35df54a1247b047a52f8acc2359b415ba8a9a",
+      "block_number": 194333182,
+      "farm_address": "0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9",
+      "tx_hash": "0x307da6591c2276d3a2ab9c20cec15faf435ccae726c64c3118022fd0583bbc0d"
+    }
+  ]
+}
+```
+</ResponseExample>

@@ -1,0 +1,79 @@
+---
+title: "List Airdrops"
+description: "Returns all available airdrop campaigns"
+api: "GET https://sei-api.dragonswap.app/api/v1/airdrops"
+---
+
+No parameters required.
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="airdrops" type="array">
+  Array of airdrop campaign objects.
+
+  <Expandable title="Airdrop object properties">
+    <ResponseField name="name" type="string">
+      Human-readable name of the airdrop campaign.
+    </ResponseField>
+
+    <ResponseField name="address" type="string">
+      Contract address of the airdrop.
+    </ResponseField>
+
+    <ResponseField name="token_address" type="string">
+      Contract address of the token being airdropped.
+    </ResponseField>
+
+    <ResponseField name="number_of_users" type="number">
+      Total number of eligible users for the airdrop.
+    </ResponseField>
+
+    <ResponseField name="timestamps" type="array">
+      Array of Unix timestamps marking vesting schedule milestones.
+    </ResponseField>
+
+    <ResponseField name="vesting_text" type="string">
+      Human-readable description of the vesting schedule.
+    </ResponseField>
+
+    <ResponseField name="total_claimed" type="number">
+      Total amount of tokens claimed so far.
+    </ResponseField>
+
+    <ResponseField name="total_deposited" type="number">
+      Total amount of tokens deposited into the airdrop contract.
+    </ResponseField>
+
+    <ResponseField name="starts_at" type="number">
+      Unix timestamp when the airdrop becomes claimable.
+    </ResponseField>
+
+    <ResponseField name="ends_at" type="number">
+      Unix timestamp when the airdrop expires.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "airdrops": [
+    {
+      "name": "xDRG Airdrop",
+      "address": "0xe418e8f4245de5e03456b36cb8ff4158f1324f90",
+      "token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+      "number_of_users": 11331,
+      "timestamps": [1752674400, 1755352800],
+      "vesting_text": "70% now, 30% after 30 days.",
+      "total_claimed": 0,
+      "total_deposited": 5000000,
+      "starts_at": 1752674400,
+      "ends_at": 1755352800
+    }
+  ]
+}
+```
+</ResponseExample>

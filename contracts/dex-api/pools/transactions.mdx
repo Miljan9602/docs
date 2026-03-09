@@ -1,0 +1,97 @@
+---
+title: "Pool Transactions"
+description: "Swap transactions for a specific pool with aggregate stats"
+api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/transactions"
+---
+
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
+  Pool contract address.
+</ParamField>
+
+## Response Fields
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="transactions" type="array">
+  Array of swap transaction objects.
+
+  <Expandable title="Transaction object">
+    <ResponseField name="pool_address" type="string">
+      Address of the pool where the swap occurred.
+    </ResponseField>
+    <ResponseField name="first_token_address" type="string">
+      Address of the first token in the swap.
+    </ResponseField>
+    <ResponseField name="second_token_address" type="string">
+      Address of the second token in the swap.
+    </ResponseField>
+    <ResponseField name="first_amount_token" type="number">
+      Amount of the first token swapped.
+    </ResponseField>
+    <ResponseField name="second_amount_token" type="number">
+      Amount of the second token swapped.
+    </ResponseField>
+    <ResponseField name="block_number" type="number">
+      Block number in which the transaction was included.
+    </ResponseField>
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash.
+    </ResponseField>
+    <ResponseField name="from" type="string">
+      Address that initiated the swap.
+    </ResponseField>
+    <ResponseField name="total_value" type="number">
+      Total value of the swap in USD.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Transaction type: `Swap`.
+    </ResponseField>
+    <ResponseField name="action" type="string">
+      Swap direction: `Buy` or `Sell`.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Timestamp of the transaction.
+    </ResponseField>
+    <ResponseField name="pool_type" type="string">
+      Pool type: `V3_POOL` or `V2_POOL`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="stats" type="object">
+  Aggregate statistics for the pool's transactions.
+
+  <Expandable title="Stats object">
+    <ResponseField name="tx_count" type="number">
+      Total number of transactions.
+    </ResponseField>
+    <ResponseField name="buy_volume_usd" type="number">
+      Total buy volume in USD.
+    </ResponseField>
+    <ResponseField name="sell_volume_usd" type="number">
+      Total sell volume in USD.
+    </ResponseField>
+    <ResponseField name="total_volume_usd" type="number">
+      Combined buy and sell volume in USD.
+    </ResponseField>
+    <ResponseField name="total_buys_count" type="number">
+      Total number of buy transactions.
+    </ResponseField>
+    <ResponseField name="total_sells_count" type="number">
+      Total number of sell transactions.
+    </ResponseField>
+    <ResponseField name="buyers_count" type="number">
+      Number of unique buyer addresses.
+    </ResponseField>
+    <ResponseField name="sellers_count" type="number">
+      Number of unique seller addresses.
+    </ResponseField>
+    <ResponseField name="makers_count" type="number">
+      Number of unique maker addresses.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

@@ -1,0 +1,89 @@
+---
+title: "List Incentives"
+description: "Returns all active and past incentive programs"
+api: "GET https://sei-api.dragonswap.app/api/v1/incentives"
+---
+
+No parameters required.
+
+<ResponseField name="status" type="string">
+  Request status indicator.
+</ResponseField>
+
+<ResponseField name="incentives" type="array">
+  Array of incentive program objects.
+
+  <Expandable title="Incentive object properties">
+    <ResponseField name="start_time" type="number">
+      Unix timestamp when the incentive program starts.
+    </ResponseField>
+
+    <ResponseField name="end_time" type="number">
+      Unix timestamp when the incentive program ends.
+    </ResponseField>
+
+    <ResponseField name="reward" type="number">
+      Total reward amount for the incentive program.
+    </ResponseField>
+
+    <ResponseField name="reward_token" type="string">
+      Contract address of the reward token.
+    </ResponseField>
+
+    <ResponseField name="refundee" type="string">
+      Address that receives any unclaimed rewards after the program ends.
+    </ResponseField>
+
+    <ResponseField name="pool" type="string">
+      Contract address of the liquidity pool associated with the incentive.
+    </ResponseField>
+
+    <ResponseField name="incentive_id" type="string">
+      Unique identifier for the incentive program.
+    </ResponseField>
+
+    <ResponseField name="apr" type="string">
+      Current annual percentage rate for the incentive.
+    </ResponseField>
+
+    <ResponseField name="title" type="string">
+      Human-readable name of the incentive (typically the token pair).
+    </ResponseField>
+
+    <ResponseField name="liquidity_usd" type="string">
+      Total liquidity in USD currently staked in the incentive.
+    </ResponseField>
+
+    <ResponseField name="owner" type="string">
+      Address of the incentive program owner, if applicable.
+    </ResponseField>
+
+    <ResponseField name="campaign" type="string">
+      Associated campaign identifier, if applicable.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "incentives": [
+    {
+      "start_time": 1740750000,
+      "end_time": 1743454800,
+      "reward": 317500,
+      "reward_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "refundee": "0xe0b1e2468c687ea19652d85d89a81254d657a494",
+      "pool": "0x69e2edd60bbcd42fd5ed549599de249a9a34b98b",
+      "incentive_id": "0x6a785d3a701decf7668d554ce30c55f0dbaef2ac1853e75a2044f8b70c3249fe",
+      "apr": "7627.9479464675",
+      "title": "WETH / USDC",
+      "liquidity_usd": "0",
+      "owner": null,
+      "campaign": null
+    }
+  ]
+}
+```
+</ResponseExample>
