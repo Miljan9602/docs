@@ -65,6 +65,7 @@
                   "frontend/api/post-intent",
                   "frontend/api/get-analytics-overview",
                   "frontend/api/get-analytics-volume",
+                  "frontend/api/get-analytics-hourly",
                   "frontend/api/health"
                 ]
               }

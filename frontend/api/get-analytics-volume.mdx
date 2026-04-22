@@ -1,0 +1,160 @@
+---
+title: "Get Analytics Volume"
+api: "GET /api/v1/analytics/volume"
+---
+
+Get time-series volume data for the RFQ protocol, bucketed by hour (24h) or day (7d/30d/all).
+
+## Query Parameters
+
+<ParamField query="period" type="string" default="24h">
+  Time period for volume data. One of: `24h`, `7d`, `30d`, `all`.
+</ParamField>
+
+<ParamField query="chain_id" type="string">
+  Filter by chain ID. If omitted, returns aggregate stats across all chains.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success
+</ResponseField>
+
+<ResponseField name="period" type="string">
+  The requested time period
+</ResponseField>
+
+<ResponseField name="data_points" type="array">
+  Array of volume data points, sorted chronologically.
+
+  <Expandable title="Data Point">
+    <ResponseField name="timestamp" type="number">
+      Unix timestamp in seconds. Hourly for `24h` period, daily (midnight UTC) for `7d`/`30d`/`all`.
+    </ResponseField>
+
+    <ResponseField name="volume" type="number">
+      Total USD volume for this time bucket.
+    </ResponseField>
+
+    <ResponseField name="trade_count" type="number">
+      Number of successful trades in this time bucket.
+    </ResponseField>
+
+    <ResponseField name="fees" type="number">
+      Total USD protocol fees collected for this time bucket.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://rfq.saphyre.xyz/api/v1/analytics/volume?period=7d&chain_id=1329"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  period: "7d",
+  chain_id: "1329",
+});
+
+const response = await fetch(
+  `https://rfq.saphyre.xyz/api/v1/analytics/volume?${params}`
+);
+const data = await response.json();
+
+for (const point of data.data_points) {
+  const date = new Date(point.timestamp * 1000);
+  console.log(`${date.toISOString()}: ${point.volume} volume, ${point.trade_count} trades`);
+}
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://rfq.saphyre.xyz/api/v1/analytics/volume",
+    params={"period": "7d", "chain_id": "1329"}
+)
+data = response.json()
+from datetime import datetime, timezone
+for point in data["data_points"]:
+    dt = datetime.fromtimestamp(point["timestamp"], tz=timezone.utc)
+    print(f"{dt}: {point['volume']} volume, {point['trade_count']} trades")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success (7d)
+{
+  "status": "ok",
+  "period": "7d",
+  "data_points": [
+    {
+      "timestamp": 1774243200,
+      "volume": 12345.67,
+      "trade_count": 42,
+      "fees": 37.04
+    },
+    {
+      "timestamp": 1774329600,
+      "volume": 9876.54,
+      "trade_count": 35,
+      "fees": 29.63
+    },
+    {
+      "timestamp": 1774416000,
+      "volume": 15432.10,
+      "trade_count": 58,
+      "fees": 46.30
+    }
+  ]
+}
+```
+
+```json 200 - Success (24h, hourly buckets)
+{
+  "status": "ok",
+  "period": "24h",
+  "data_points": [
+    {
+      "timestamp": 1774969200,
+      "volume": 523.45,
+      "trade_count": 3,
+      "fees": 1.57
+    },
+    {
+      "timestamp": 1774972800,
+      "volume": 1200.00,
+      "trade_count": 7,
+      "fees": 3.60
+    }
+  ]
+}
+```
+
+```json 400 - Invalid Period
+{
+  "status": "error",
+  "error": "period: Invalid enum value. Expected '24h' | '7d' | '30d' | 'all'",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+
+```json 500 - Server Error
+{
+  "status": "error",
+  "error": "Failed to fetch analytics",
+  "code": "INTERNAL_ERROR"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- This endpoint is public and does not require authentication
+- `24h` period uses live transaction data with hourly buckets
+- `7d`, `30d`, and `all` periods use pre-aggregated daily rollups for performance
+- Volume and fee values are in USD (sourced from `transactions.volume_usd` and `transactions.fee_usd`)
+- Empty time buckets (hours/days with no trades) are omitted from the response
+- Cache TTL: 10s for `24h`, 20s for `7d`/`30d`/`all`

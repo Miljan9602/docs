@@ -1,0 +1,102 @@
+---
+title: "Get Analytics Overview"
+api: "GET /api/v1/analytics/overview"
+---
+
+Get aggregate analytics for the RFQ protocol including total trades, volume, unique users, and fees.
+
+## Query Parameters
+
+<ParamField query="chain_id" type="string">
+  Filter by chain ID. If omitted, returns aggregate stats across all chains.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success
+</ResponseField>
+
+<ResponseField name="total_trades" type="number">
+  Total number of successful trades (all time)
+</ResponseField>
+
+<ResponseField name="total_volume_usd" type="number">
+  Total trading volume in human-readable token units (all time)
+</ResponseField>
+
+<ResponseField name="unique_users" type="number">
+  Total number of unique user addresses that have traded
+</ResponseField>
+
+<ResponseField name="total_fees_collected" type="number">
+  Total protocol fees collected in human-readable token units (all time)
+</ResponseField>
+
+<ResponseField name="volume_24h" type="number">
+  Trading volume in the last 24 hours (human-readable units)
+</ResponseField>
+
+<ResponseField name="trades_24h" type="number">
+  Number of trades in the last 24 hours
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://rfq.saphyre.xyz/api/v1/analytics/overview?chain_id=1329"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({ chain_id: "1329" });
+
+const response = await fetch(
+  `https://rfq.saphyre.xyz/api/v1/analytics/overview?${params}`
+);
+const data = await response.json();
+
+console.log("Total trades:", data.total_trades);
+console.log("24h volume:", data.volume_24h);
+console.log("Unique users:", data.unique_users);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://rfq.saphyre.xyz/api/v1/analytics/overview",
+    params={"chain_id": "1329"}
+)
+data = response.json()
+print(f"Total trades: {data['total_trades']}, 24h volume: {data['volume_24h']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "total_trades": 1234,
+  "total_volume_usd": 567890.12,
+  "unique_users": 89,
+  "total_fees_collected": 1234.56,
+  "volume_24h": 12345.67,
+  "trades_24h": 42
+}
+```
+
+```json 500 - Server Error
+{
+  "status": "error",
+  "error": "Failed to fetch analytics",
+  "code": "INTERNAL_ERROR"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- This endpoint is public and does not require authentication
+- All-time stats are computed from pre-aggregated daily rollups for fast response times
+- 24h stats are computed live from confirmed on-chain transactions
+- Volume and fee amounts are in human-readable token units (not wei)
+- Response is cached for 10 seconds

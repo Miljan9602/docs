@@ -1,0 +1,142 @@
+---
+title: "Get Hourly Analytics"
+api: "GET /api/v1/analytics/hourly"
+---
+
+Get hourly volume breakdown for a single calendar day (UTC). Useful for detailed per-hour analysis of any past or current date. Hours with no trades are omitted from the response.
+
+Data is computed live from the `transactions` table — the daily rollup only has daily granularity.
+
+## Query Parameters
+
+<ParamField query="date" type="string" required>
+  Date to query in ISO 8601 format `YYYY-MM-DD` (e.g. `2026-04-22`). Day boundaries are midnight-to-midnight UTC.
+</ParamField>
+
+<ParamField query="chain_id" type="string">
+  Filter by chain ID. If omitted, returns aggregate stats across all chains.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Response status: `"ok"` on success
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  The requested date (echo of the query parameter)
+</ResponseField>
+
+<ResponseField name="data_points" type="array">
+  Array of hourly data points, sorted chronologically. Hours with no successful trades are omitted.
+
+  <Expandable title="Data Point">
+    <ResponseField name="timestamp" type="number">
+      Unix timestamp in seconds, snapped to the top of the hour (UTC).
+    </ResponseField>
+
+    <ResponseField name="volume" type="number">
+      Total USD volume for this hour bucket.
+    </ResponseField>
+
+    <ResponseField name="trade_count" type="number">
+      Number of successful trades in this hour bucket.
+    </ResponseField>
+
+    <ResponseField name="fees" type="number">
+      Total USD protocol fees collected for this hour bucket.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://rfq.saphyre.xyz/api/v1/analytics/hourly?date=2026-04-22&chain_id=1329"
+```
+
+```javascript JavaScript
+const params = new URLSearchParams({
+  date: "2026-04-22",
+  chain_id: "1329",
+});
+
+const response = await fetch(
+  `https://rfq.saphyre.xyz/api/v1/analytics/hourly?${params}`
+);
+const data = await response.json();
+
+for (const point of data.data_points) {
+  const hour = new Date(point.timestamp * 1000);
+  console.log(`${hour.toISOString()}: $${point.volume} volume, ${point.trade_count} trades, $${point.fees} fees`);
+}
+```
+
+```python Python
+import requests
+from datetime import datetime, timezone
+
+response = requests.get(
+    "https://rfq.saphyre.xyz/api/v1/analytics/hourly",
+    params={"date": "2026-04-22", "chain_id": "1329"}
+)
+data = response.json()
+
+for point in data["data_points"]:
+    hour = datetime.fromtimestamp(point["timestamp"], tz=timezone.utc)
+    print(f"{hour}: ${point['volume']} volume, {point['trade_count']} trades, ${point['fees']} fees")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "date": "2026-04-22",
+  "data_points": [
+    {
+      "timestamp": 1776783600,
+      "volume": 23,
+      "trade_count": 1,
+      "fees": 0.069
+    },
+    {
+      "timestamp": 1776787200,
+      "volume": 145.36,
+      "trade_count": 23,
+      "fees": 0.436092
+    },
+    {
+      "timestamp": 1776848400,
+      "volume": 13074.55,
+      "trade_count": 94,
+      "fees": 39.223815
+    }
+  ]
+}
+```
+
+```json 400 - Invalid Date Format
+{
+  "status": "error",
+  "error": "date: date must be ISO format YYYY-MM-DD",
+  "code": "VALIDATION_INVALID_PARAM"
+}
+```
+
+```json 500 - Server Error
+{
+  "status": "error",
+  "error": "Failed to fetch analytics",
+  "code": "INTERNAL_ERROR"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Public endpoint; no authentication required.
+- Hourly buckets are aligned to the top of each UTC hour (`date_trunc('hour', created_at)`).
+- Empty hour buckets (no successful trades) are omitted from `data_points`.
+- Volume and fee values are in **USD** (sourced from the `transactions.volume_usd` and `transactions.fee_usd` columns).
+- Cache TTL: 60 seconds for the current UTC day, 1 hour for past days (past days are immutable).
+- Dates in the future return an empty `data_points` array.

@@ -279,13 +279,13 @@ Get aggregate RFQ protocol analytics (total trades, volume, fees, users).
 | Field | Type | Description |
 |-------|------|-------------|
 | `total_trades` | number | Successful trades, all time |
-| `total_volume_usd` | number | Total input volume, human-readable units, all time |
+| `total_volume_usd` | number | Total USD volume, all time |
 | `unique_users` | number | Unique user addresses that have traded |
-| `total_fees_collected` | number | Total protocol fees collected, human-readable units |
-| `volume_24h` | number | Trading volume in the last 24h |
+| `total_fees_collected` | number | Total USD protocol fees collected, all time |
+| `volume_24h` | number | USD volume in the last 24h |
 | `trades_24h` | number | Trades in the last 24h |
 
-Values are in human-readable token units (not wei). Response is Redis-cached for 10 seconds.
+Monetary values are in **USD** (summed from `transactions.volume_usd` / `fee_usd`). Response is Redis-cached for 10 seconds.
 
 ---
 
@@ -307,8 +307,8 @@ Time-series volume data bucketed by hour (`24h`) or day (`7d`/`30d`/`all`).
   "status": "ok",
   "period": "7d",
   "data_points": [
-    { "timestamp": 1774243200, "volume": 12345.67, "trade_count": 42 },
-    { "timestamp": 1774329600, "volume": 9876.54, "trade_count": 35 }
+    { "timestamp": 1774243200, "volume": 12345.67, "trade_count": 42, "fees": 37.04 },
+    { "timestamp": 1774329600, "volume": 9876.54, "trade_count": 35, "fees": 29.63 }
   ]
 }
 ```
@@ -316,10 +316,48 @@ Time-series volume data bucketed by hour (`24h`) or day (`7d`/`30d`/`all`).
 | Field | Type | Description |
 |-------|------|-------------|
 | `data_points[].timestamp` | number | Unix seconds. Hourly for `24h`, daily (midnight UTC) for other periods. |
-| `data_points[].volume` | number | Input volume in this bucket (human-readable units) |
-| `data_points[].trade_count` | number | Trades in this bucket |
+| `data_points[].volume` | number | Total USD volume in this bucket. |
+| `data_points[].trade_count` | number | Number of successful trades in this bucket. |
+| `data_points[].fees` | number | Total USD protocol fees collected in this bucket. |
 
 Empty buckets are omitted. Cache TTL: 10s for `24h`, 20s for other periods.
+
+---
+
+### GET /api/v1/analytics/hourly
+
+Hourly volume breakdown for a single calendar day (UTC). Useful for detailed per-hour analysis of any past or current date.
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `date` | string | yes | ISO 8601 date `YYYY-MM-DD` (e.g. `2026-04-22`). Day boundaries are midnight-to-midnight UTC. |
+| `chain_id` | string | no | Filter by chain. Omit for aggregate across all chains. |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "date": "2026-04-22",
+  "data_points": [
+    { "timestamp": 1776783600, "volume": 23, "trade_count": 1, "fees": 0.069 },
+    { "timestamp": 1776787200, "volume": 145.36, "trade_count": 23, "fees": 0.436092 },
+    { "timestamp": 1776848400, "volume": 13074.55, "trade_count": 94, "fees": 39.223815 }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string | Echo of the query date (`YYYY-MM-DD`). |
+| `data_points[].timestamp` | number | Unix seconds snapped to the top of the UTC hour. |
+| `data_points[].volume` | number | Total USD volume for the hour. |
+| `data_points[].trade_count` | number | Number of successful trades in the hour. |
+| `data_points[].fees` | number | Total USD protocol fees collected in the hour. |
+
+Data is computed live from `transactions` (daily rollup has no hourly granularity). Empty hours are omitted. Cache TTL: 60s for the current UTC day, 1 hour for past days. Returns an empty `data_points` array for dates in the future.
 
 ---
 
