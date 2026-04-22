@@ -252,6 +252,77 @@ Health check endpoint.
 
 ---
 
+### GET /api/v1/analytics/overview
+
+Get aggregate RFQ protocol analytics (total trades, volume, fees, users).
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `chain_id` | string | no | Filter by chain. Omit for aggregate across all chains. |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "total_trades": 1234,
+  "total_volume_usd": 567890.12,
+  "unique_users": 89,
+  "total_fees_collected": 1234.56,
+  "volume_24h": 12345.67,
+  "trades_24h": 42
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_trades` | number | Successful trades, all time |
+| `total_volume_usd` | number | Total input volume, human-readable units, all time |
+| `unique_users` | number | Unique user addresses that have traded |
+| `total_fees_collected` | number | Total protocol fees collected, human-readable units |
+| `volume_24h` | number | Trading volume in the last 24h |
+| `trades_24h` | number | Trades in the last 24h |
+
+Values are in human-readable token units (not wei). Response is Redis-cached for 10 seconds.
+
+---
+
+### GET /api/v1/analytics/volume
+
+Time-series volume data bucketed by hour (`24h`) or day (`7d`/`30d`/`all`).
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `period` | string | no | One of `24h`, `7d`, `30d`, `all`. Default: `24h`. |
+| `chain_id` | string | no | Filter by chain. Omit for aggregate. |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "period": "7d",
+  "data_points": [
+    { "timestamp": 1774243200, "volume": 12345.67, "trade_count": 42 },
+    { "timestamp": 1774329600, "volume": 9876.54, "trade_count": 35 }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `data_points[].timestamp` | number | Unix seconds. Hourly for `24h`, daily (midnight UTC) for other periods. |
+| `data_points[].volume` | number | Input volume in this bucket (human-readable units) |
+| `data_points[].trade_count` | number | Trades in this bucket |
+
+Empty buckets are omitted. Cache TTL: 10s for `24h`, 20s for other periods.
+
+---
+
 ## Permit2 Approval Flow
 
 Users must approve the Permit2 contract **once per token** before swapping. After approval, all subsequent swaps use gasless EIP-712 signatures.

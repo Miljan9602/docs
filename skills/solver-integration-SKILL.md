@@ -294,7 +294,7 @@ Every message follows this structure:
 4. **Heartbeat** - coordinator sends native WebSocket ping every 30s (pong is automatic)
 5. **Quotes** - coordinator sends `get_quote` when users request prices
 6. **Intents** - coordinator sends `sign_intent` when users submit swaps
-7. **Trade results** - coordinator sends `trade_result` after settlement (fire-and-forget)
+7. **Trade results** - coordinator sends `trade_result` after settlement (fire-and-forget, no response expected)
 
 ### Authentication
 
@@ -460,6 +460,8 @@ Required response fields: `quote_id`, `amount_out`, `expiry`. The `expiry` field
   }
 }
 ```
+
+After on-chain settlement, the coordinator pushes this message to notify the solver of the tx hash. The same payload is available over HTTP (`POST /api/v1/trade-result`) for solvers using the HTTP transport; WSS solvers receive it over the existing WebSocket and do not need to expose an HTTP route.
 
 ### Close Codes
 
