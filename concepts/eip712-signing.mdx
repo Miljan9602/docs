@@ -198,13 +198,13 @@ import { createWalletClient, custom } from 'viem';
 import { sei } from 'viem/chains';
 
 // 1. Get config
-const configResponse = await fetch('https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=1329');
+const configResponse = await fetch('https://rfq.saphyre.xyz/api/v1/config?chain_id=1329');
 const config = await configResponse.json();
 const PERMIT2 = config.permit2_address;
 const RFQ_SETTLEMENT = config.rfq_settlement_address;
 
 // 2. Get quote
-const quote = await fetch('https://dev-rfq.saphyre.xyz/api/v1/quote?...').then(r => r.json());
+const quote = await fetch('https://rfq.saphyre.xyz/api/v1/quote?...').then(r => r.json());
 
 // 3. Build typed data
 const domain = {
@@ -268,7 +268,7 @@ const signature = await walletClient.signTypedData({
 });
 
 // 5. Submit intent
-const result = await fetch('https://dev-rfq.saphyre.xyz/api/v1/intent', {
+const result = await fetch('https://rfq.saphyre.xyz/api/v1/intent', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({

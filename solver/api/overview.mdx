@@ -12,8 +12,8 @@ The RFQ Protocol exposes two sets of APIs:
 
 | Environment | URL |
 |-------------|-----|
-| Production | `https://dev-rfq.saphyre.xyz` |
-| Testnet | `https://testnet-dev-rfq.saphyre.xyz` |
+| Production | `https://rfq.saphyre.xyz` |
+| Testnet | `https://testnet-rfq.saphyre.xyz` |
 
 ## Authentication
 
@@ -109,13 +109,13 @@ See the [WebSocket Guide](/solver/websocket-guide) for full WSS protocol details
 ### 1. Get Available Markets
 
 ```bash
-curl "https://dev-rfq.saphyre.xyz/api/v1/markets?chain_id=<CHAIN_ID>"
+curl "https://rfq.saphyre.xyz/api/v1/markets?chain_id=<CHAIN_ID>"
 ```
 
 ### 2. Request a Quote
 
 ```bash
-curl "https://dev-rfq.saphyre.xyz/api/v1/quote?\
+curl "https://rfq.saphyre.xyz/api/v1/quote?\
 input_token=<INPUT_TOKEN>&\
 output_token=<OUTPUT_TOKEN>&\
 amount=<AMOUNT>&\
@@ -125,7 +125,7 @@ chain_id=<CHAIN_ID>"
 ### 3. Submit Intent
 
 ```bash
-curl -X POST "https://dev-rfq.saphyre.xyz/api/v1/intent" \
+curl -X POST "https://rfq.saphyre.xyz/api/v1/intent" \
   -H "Content-Type: application/json" \
   -d '{
     "quote_id": "550e8400-e29b-41d4-a716-446655440000",

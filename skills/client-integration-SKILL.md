@@ -9,8 +9,8 @@ description: Use when building a frontend or app that integrates with the Nima R
 
 | Property | Value |
 |----------|-------|
-| Production URL | `https://dev-rfq.saphyre.xyz` |
-| Testnet URL | `https://testnet-dev-rfq.saphyre.xyz` |
+| Production URL | `https://rfq.saphyre.xyz` |
+| Testnet URL | `https://testnet-rfq.saphyre.xyz` |
 | API Prefix | `/api/v1/` |
 | Authentication | None (public API) |
 | Sei Mainnet Chain ID | `1329` |
@@ -393,7 +393,7 @@ import { createWalletClient, createPublicClient, custom, http, erc20Abi, maxUint
 import { sei } from 'viem/chains';
 
 const CHAIN_ID = 1329;
-const BASE_URL = 'https://dev-rfq.saphyre.xyz';
+const BASE_URL = 'https://rfq.saphyre.xyz';
 
 // 1. Get config
 const config = await fetch(`${BASE_URL}/api/v1/config?chain_id=${CHAIN_ID}`).then(r => r.json());
@@ -528,7 +528,7 @@ import secrets
 import time
 import requests
 
-BASE_URL = "https://dev-rfq.saphyre.xyz"
+BASE_URL = "https://rfq.saphyre.xyz"
 CHAIN_ID = 1329
 
 # 1. Get config

@@ -9,9 +9,9 @@ description: Use when building a solver or market maker that provides liquidity 
 
 | Property | Value |
 |----------|-------|
-| Production URL | `https://dev-rfq.saphyre.xyz` |
-| Testnet URL | `https://testnet-dev-rfq.saphyre.xyz` |
-| WSS Endpoint | `wss://dev-rfq.saphyre.xyz/api/v1/solver-stream` |
+| Production URL | `https://rfq.saphyre.xyz` |
+| Testnet URL | `https://testnet-rfq.saphyre.xyz` |
+| WSS Endpoint | `wss://rfq.saphyre.xyz/api/v1/solver-stream` |
 | Sei Mainnet Chain ID | `1329` |
 | Permit2 (Sei) | `0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98` |
 | Signing Standard | EIP-712 via Permit2 (`PermitWitnessTransferFrom` + `MakerSwapIntent` witness) |
@@ -74,15 +74,15 @@ Registration is currently manual. Contact the protocol team to get whitelisted.
 
 | Environment | URL |
 |-------------|-----|
-| Production | `https://dev-rfq.saphyre.xyz` |
-| Testnet | `https://testnet-dev-rfq.saphyre.xyz` |
+| Production | `https://rfq.saphyre.xyz` |
+| Testnet | `https://testnet-rfq.saphyre.xyz` |
 
 ## Configuration
 
 Fetch contract addresses dynamically from `/api/v1/config`:
 
 ```bash
-curl "https://dev-rfq.saphyre.xyz/api/v1/config?chain_id=1329"
+curl "https://rfq.saphyre.xyz/api/v1/config?chain_id=1329"
 ```
 
 ```json
@@ -264,7 +264,7 @@ Solvers connect **to** the coordinator via persistent WebSocket. No public endpo
 ### Connection
 
 ```
-wss://dev-rfq.saphyre.xyz/api/v1/solver-stream
+wss://rfq.saphyre.xyz/api/v1/solver-stream
 ```
 
 All messages are **MessagePack-encoded binary** WebSocket frames (RFC 6455).
@@ -628,7 +628,7 @@ On-chain validation: `maker.outputAmount == taker.inputAmount - fee`
 import WebSocket from "ws";
 import { encode, decode } from "@msgpack/msgpack";
 
-const WS_URL = "wss://dev-rfq.saphyre.xyz/api/v1/solver-stream";
+const WS_URL = "wss://rfq.saphyre.xyz/api/v1/solver-stream";
 const AUTH_KEY = process.env.MM_AUTH_KEY;
 
 function connect() {
@@ -730,7 +730,7 @@ use serde_json::{json, Value};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let url = "wss://dev-rfq.saphyre.xyz/api/v1/solver-stream";
+    let url = "wss://rfq.saphyre.xyz/api/v1/solver-stream";
     let (ws, _) = connect_async(url).await?;
     let (mut tx, mut rx) = ws.split();
 
@@ -934,7 +934,7 @@ async function signReversedIntent(data: {
 
 ```bash
 # Connection
-RFQ_SERVER_WS_URL=wss://dev-rfq.saphyre.xyz/api/v1/solver-stream
+RFQ_SERVER_WS_URL=wss://rfq.saphyre.xyz/api/v1/solver-stream
 MM_AUTH_KEY=your-plain-text-auth-key
 
 # Chain

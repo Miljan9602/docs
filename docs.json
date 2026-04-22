@@ -63,6 +63,8 @@
                   "frontend/api/get-markets",
                   "frontend/api/get-quote",
                   "frontend/api/post-intent",
+                  "frontend/api/get-analytics-overview",
+                  "frontend/api/get-analytics-volume",
                   "frontend/api/health"
                 ]
               }
@@ -213,7 +215,7 @@
     ]
   },
   "api": {
-    "baseUrl": "https://dev-rfq.saphyre.xyz",
+    "baseUrl": "https://rfq.saphyre.xyz",
     "playground": {
       "display": "interactive"
     }
