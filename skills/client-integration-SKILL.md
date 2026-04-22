@@ -310,7 +310,7 @@ Empty buckets are omitted. Cache TTL: 10s for `24h`, 20s for other periods.
 
 ### GET /api/v1/analytics/hourly
 
-Hourly volume breakdown for a single calendar day (UTC). Useful for detailed per-hour analysis of any past or current date.
+Hourly volume breakdown for a single calendar day (UTC). **Always returns exactly 24 buckets** (one per UTC hour of the day); hours with no successful trades have all-zero values. Use this when you need a full-day chart without reconciling missing hours.
 
 **Query Parameters:**
 
@@ -319,15 +319,16 @@ Hourly volume breakdown for a single calendar day (UTC). Useful for detailed per
 | `date` | string | yes | ISO 8601 date `YYYY-MM-DD` (e.g. `2026-04-22`). Day boundaries are midnight-to-midnight UTC. |
 | `chain_id` | string | no | Filter by chain. Omit for aggregate across all chains. |
 
-**Response:**
+**Response (abbreviated — always 24 entries):**
 
 ```json
 {
   "status": "ok",
   "date": "2026-04-22",
   "data_points": [
-    { "timestamp": 1776783600, "volume": 23, "trade_count": 1, "fees": 0.069 },
-    { "timestamp": 1776787200, "volume": 145.36, "trade_count": 23, "fees": 0.436092 },
+    { "timestamp": 1776816000, "volume": 0,        "trade_count": 0,  "fees": 0 },
+    { "timestamp": 1776819600, "volume": 0,        "trade_count": 0,  "fees": 0 },
+    { "timestamp": 1776823200, "volume": 145.36,   "trade_count": 23, "fees": 0.436092 },
     { "timestamp": 1776848400, "volume": 13074.55, "trade_count": 94, "fees": 39.223815 }
   ]
 }
@@ -336,12 +337,13 @@ Hourly volume breakdown for a single calendar day (UTC). Useful for detailed per
 | Field | Type | Description |
 |-------|------|-------------|
 | `date` | string | Echo of the query date (`YYYY-MM-DD`). |
+| `data_points` | array | Always 24 entries, sorted chronologically. |
 | `data_points[].timestamp` | number | Unix seconds snapped to the top of the UTC hour. |
-| `data_points[].volume` | number | Total USD volume for the hour. |
-| `data_points[].trade_count` | number | Number of successful trades in the hour. |
-| `data_points[].fees` | number | Total USD protocol fees collected in the hour. |
+| `data_points[].volume` | number | Total USD volume for the hour. `0` if no trades. |
+| `data_points[].trade_count` | number | Number of successful trades in the hour. `0` if none. |
+| `data_points[].fees` | number | Total USD protocol fees collected in the hour. `0` if no trades. |
 
-Data is computed live from `transactions` (daily rollup has no hourly granularity). Empty hours are omitted. Cache TTL: 60s for the current UTC day, 1 hour for past days. Returns an empty `data_points` array for dates in the future.
+Data is computed live from `transactions` (daily rollup has no hourly granularity). Cache TTL: 60s for the current UTC day, 1 hour for past days. Future dates return 24 zero-valued buckets.
 
 ---
 

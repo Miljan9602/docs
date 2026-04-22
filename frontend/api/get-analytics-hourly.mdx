@@ -3,7 +3,7 @@ title: "Get Hourly Analytics"
 api: "GET /api/v1/analytics/hourly"
 ---
 
-Get hourly volume breakdown for a single calendar day (UTC). Useful for detailed per-hour analysis of any past or current date. Hours with no trades are omitted from the response.
+Get hourly volume breakdown for a single calendar day (UTC). Useful for detailed per-hour analysis of any past or current date. **Always returns 24 buckets** (one per UTC hour of the day); hours with no successful trades have `volume`, `trade_count`, and `fees` all equal to `0`.
 
 Data is computed live from the `transactions` table — the daily rollup only has daily granularity.
 
@@ -28,7 +28,7 @@ Data is computed live from the `transactions` table — the daily rollup only ha
 </ResponseField>
 
 <ResponseField name="data_points" type="array">
-  Array of hourly data points, sorted chronologically. Hours with no successful trades are omitted.
+  Array of exactly 24 hourly data points, sorted chronologically. Hours with no successful trades are still present with zero values.
 
   <Expandable title="Data Point">
     <ResponseField name="timestamp" type="number">
@@ -88,29 +88,17 @@ for point in data["data_points"]:
 </RequestExample>
 
 <ResponseExample>
-```json 200 - Success
+```json 200 - Success (abbreviated — all 24 hours are always returned)
 {
   "status": "ok",
   "date": "2026-04-22",
   "data_points": [
-    {
-      "timestamp": 1776783600,
-      "volume": 23,
-      "trade_count": 1,
-      "fees": 0.069
-    },
-    {
-      "timestamp": 1776787200,
-      "volume": 145.36,
-      "trade_count": 23,
-      "fees": 0.436092
-    },
-    {
-      "timestamp": 1776848400,
-      "volume": 13074.55,
-      "trade_count": 94,
-      "fees": 39.223815
-    }
+    { "timestamp": 1776816000, "volume": 0,        "trade_count": 0,  "fees": 0 },
+    { "timestamp": 1776819600, "volume": 0,        "trade_count": 0,  "fees": 0 },
+    { "timestamp": 1776823200, "volume": 145.36,   "trade_count": 23, "fees": 0.436092 },
+    { "timestamp": 1776826800, "volume": 0,        "trade_count": 0,  "fees": 0 },
+    { "timestamp": 1776848400, "volume": 13074.55, "trade_count": 94, "fees": 39.223815 }
+    // ...19 more hour buckets, always totalling 24
   ]
 }
 ```
@@ -136,7 +124,7 @@ for point in data["data_points"]:
 
 - Public endpoint; no authentication required.
 - Hourly buckets are aligned to the top of each UTC hour (`date_trunc('hour', created_at)`).
-- Empty hour buckets (no successful trades) are omitted from `data_points`.
+- `data_points` always contains exactly **24 entries**. Hours with no successful trades have `volume`, `trade_count`, and `fees` all set to `0` — they are never omitted.
 - Volume and fee values are in **USD** (sourced from the `transactions.volume_usd` and `transactions.fee_usd` columns).
 - Cache TTL: 60 seconds for the current UTC day, 1 hour for past days (past days are immutable).
-- Dates in the future return an empty `data_points` array.
+- Dates in the future return 24 zero-valued buckets.
