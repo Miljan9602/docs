@@ -371,6 +371,55 @@ Data is computed live from `transactions` (daily rollup has no hourly granularit
 
 ---
 
+### GET /api/v1/analytics/daily
+
+Daily breakdown across a date range (one dot per UTC day). Includes `totals` across the whole range and zero-fills days with no trades, so the response is always chart-ready.
+
+**Query Parameters:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `from` | string | no | Start date `YYYY-MM-DD` (UTC, inclusive). Default: earliest day with data. |
+| `to` | string | no | End date `YYYY-MM-DD` (UTC, inclusive). Default: today. Must be >= `from`. |
+| `chain_id` | string | no | Filter by chain. Omit for aggregate across all chains. |
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "from": "2026-04-20",
+  "to": "2026-04-23",
+  "totals": {
+    "volume": 17230.52,
+    "trade_count": 168,
+    "fees": 51.691528
+  },
+  "data_points": [
+    { "timestamp": 1776729600, "volume": 3842.91,  "trade_count": 49, "fees": 11.528659 },
+    { "timestamp": 1776816000, "volume": 13074.55, "trade_count": 94, "fees": 39.223815 },
+    { "timestamp": 1776902400, "volume": 313.06,   "trade_count": 25, "fees": 0.939054 },
+    { "timestamp": 1776988800, "volume": 0,        "trade_count": 0,  "fees": 0 }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `from` | string | Effective start date of the range (echo, or earliest day with data). |
+| `to` | string | Effective end date of the range (echo, or today UTC). |
+| `totals.volume` | number | Sum of USD volume across every day in the range. |
+| `totals.trade_count` | number | Total successful trades across the range. |
+| `totals.fees` | number | Sum of USD protocol fees across the range. |
+| `data_points[].timestamp` | number | Unix seconds at midnight UTC of the day. |
+| `data_points[].volume` | number | Total USD volume for the day. `0` if no trades. |
+| `data_points[].trade_count` | number | Number of successful trades in the day. `0` if none. |
+| `data_points[].fees` | number | Total USD protocol fees for the day. `0` if no trades. |
+
+Read from the pre-aggregated `analytics_daily` rollup. Every day from `from` to `to` inclusive is present (zero-filled for days with no trades). Cache TTL: 60s when range includes today, 1 hour otherwise. Use `/api/v1/analytics/hourly` for per-hour granularity within a single day.
+
+---
+
 ## Permit2 Approval Flow
 
 Users must approve the Permit2 contract **once per token** before swapping. After approval, all subsequent swaps use gasless EIP-712 signatures.
