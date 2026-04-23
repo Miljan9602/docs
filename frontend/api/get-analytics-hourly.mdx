@@ -27,6 +27,24 @@ Data is computed live from the `transactions` table — the daily rollup only ha
   The requested date (echo of the query parameter)
 </ResponseField>
 
+<ResponseField name="totals" type="object">
+  Summary totals for the whole day, summed across every hour.
+
+  <Expandable title="Totals">
+    <ResponseField name="volume" type="number">
+      Total USD volume for the day.
+    </ResponseField>
+
+    <ResponseField name="trade_count" type="number">
+      Total number of successful trades for the day.
+    </ResponseField>
+
+    <ResponseField name="fees" type="number">
+      Total USD protocol fees collected for the day.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
 <ResponseField name="data_points" type="array">
   Array of exactly 24 hourly data points, sorted chronologically. Hours with no successful trades are still present with zero values.
 
@@ -92,6 +110,11 @@ for point in data["data_points"]:
 {
   "status": "ok",
   "date": "2026-04-22",
+  "totals": {
+    "volume": 13219.91,
+    "trade_count": 117,
+    "fees": 39.659907
+  },
   "data_points": [
     { "timestamp": 1776816000, "volume": 0,        "trade_count": 0,  "fees": 0 },
     { "timestamp": 1776819600, "volume": 0,        "trade_count": 0,  "fees": 0 },
