@@ -79,6 +79,19 @@ For WebSocket solvers, the coordinator sends a `trade_result` message. **No resp
 }
 ```
 
+## Delivery Semantics
+
+**At-least-once.** The coordinator fires `trade_result` from two independent paths for every successful settlement:
+
+1. **Sync path** — immediately after the settlement tx is broadcast to the RPC. Fire-and-forget; may be lost if the solver is temporarily unreachable.
+2. **Indexer backstop** — again after the on-chain `RFQSettled` event is confirmed in a reorg-stable block (~10 blocks + indexer tick). Re-fired every indexer tick until the coordinator's DB row is promoted, guaranteeing eventual delivery.
+
+<Warning>
+  **Solvers MUST treat the endpoint (HTTP) and `trade_result` action (WSS) as idempotent.** Writing `tx_hash` for the same `quote_id` twice must be a no-op. Do NOT hedge, adjust inventory, or take any non-idempotent side-effect on receipt alone — verify on-chain via `getTransactionReceipt` first.
+</Warning>
+
+Reverted or dropped transactions emit **no events**, so only successful settlements trigger the indexer backstop.
+
 ## Implementation Example
 
 ```typescript

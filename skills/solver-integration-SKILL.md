@@ -463,6 +463,13 @@ Required response fields: `quote_id`, `amount_out`, `expiry`. The `expiry` field
 
 After on-chain settlement, the coordinator pushes this message to notify the solver of the tx hash. The same payload is available over HTTP (`POST /api/v1/trade-result`) for solvers using the HTTP transport; WSS solvers receive it over the existing WebSocket and do not need to expose an HTTP route.
 
+**Delivery semantics — at-least-once.** The coordinator fires `trade_result` twice for every successful settlement:
+
+1. **Sync path**: fired right after the settlement tx is broadcast to the RPC (fast — ~immediate). Fire-and-forget; may be lost if the solver is unreachable.
+2. **Indexer backstop**: fired again after the on-chain `RFQSettled` event is confirmed in a reorg-stable block (~10 blocks + a ≤5 s indexer tick). Guaranteed eventual delivery as long as both server and solver are eventually healthy.
+
+**Solvers MUST treat the handler as idempotent.** Updating `tx_hash` for the same `quote_id` twice must be a no-op. Do NOT hedge or take any non-idempotent action on receipt of `trade_result` — the notification is only a pointer to a tx hash that the solver should verify independently via `getTransactionReceipt` before hedging. Reverted or dropped transactions emit no events, so only successful settlements trigger the indexer backstop.
+
 ### Close Codes
 
 | Code | Name | Description |

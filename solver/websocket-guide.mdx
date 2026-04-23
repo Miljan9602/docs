@@ -361,6 +361,19 @@ After on-chain settlement, the coordinator sends a `trade_result` message with t
   The solver should **not** send a response to this message. Use the `tx_hash` to update your local trade records for analytics and auditing. The transaction may still be pending confirmation when you receive this notification.
 </Note>
 
+### Delivery semantics — at-least-once
+
+The coordinator fires `trade_result` from **two independent paths** for every successful settlement:
+
+1. **Sync path** — fired right after the settlement tx is broadcast to the RPC (~immediate). Fire-and-forget; this single attempt may be lost if the solver is unreachable (restarting, network blip, queue overflow).
+2. **Indexer backstop** — fired again after the on-chain `RFQSettled` event is confirmed in a reorg-stable block (~10 blocks + ≤5 s indexer tick). Re-tries every indexer tick until the coordinator's `transactions` row is promoted to `success`, so eventual delivery is guaranteed as long as both systems are eventually healthy.
+
+<Warning>
+  **Solvers MUST treat the handler as idempotent.** Writing `tx_hash` for the same `quote_id` twice must be a no-op. Do NOT hedge, adjust inventory, or take any non-idempotent action purely on receipt of `trade_result` — verify the receipt on-chain via `getTransactionReceipt` first and gate side effects on a local `tx_status = 'settled'` transition.
+</Warning>
+
+Reverted or dropped transactions emit **no events**, so only successful settlements trigger the indexer backstop. A solver that never receives a `trade_result` for a signed intent should independently verify the tx status (the coordinator's late-reconcile sweep also marks stale `submitted` rows as failed, but that is not pushed to the solver).
+
 ## Close Codes
 
 | Code | Name | Description |
