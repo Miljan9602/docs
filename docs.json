@@ -3,14 +3,32 @@
   "theme": "mint",
   "name": "Saphyre Docs",
   "logo": {
-    "dark": "/images/logo.png",
-    "light": "/images/logo.png"
+    "dark": "/images/logo-dark.svg",
+    "light": "/images/logo-light.svg"
   },
   "favicon": "/favicon.png",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373"
+    "primary": "#155DFC",
+    "light": "#60A5FA",
+    "dark": "#155DFC"
+  },
+  "background": {
+    "color": {
+      "dark": "#0A0A0A",
+      "light": "#FFFFFF"
+    }
+  },
+  "fonts": {
+    "family": "Supreme",
+    "source": "/fonts/Supreme-400.woff2",
+    "format": "woff2",
+    "weight": 400,
+    "heading": {
+      "family": "Supreme",
+      "source": "/fonts/Supreme-500.woff2",
+      "format": "woff2",
+      "weight": 500
+    }
   },
   "navigation": {
     "products": [
