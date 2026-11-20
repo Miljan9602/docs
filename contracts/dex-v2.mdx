@@ -5,6 +5,8 @@ description: "DEX V2 contract addresses on Sei Network"
 
 DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liquidity.
 
+The DEX API reports DEX V1 pools as `V2_POOL` and DEX V2 pools as `V3_POOL`.
+
 <AccordionGroup>
   <Accordion title="DragonswapV2Factory">
     Deploys and manages concentrated liquidity pools. Controls pool creation parameters and fee tiers.
@@ -15,7 +17,7 @@ DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liq
   </Accordion>
 
   <Accordion title="SwapRouter02">
-    Routes token swaps through optimal concentrated liquidity pools. Supports exact-input and exact-output swaps.
+    Swaps along a caller-supplied path through DEX V1 pairs and DEX V2 pools. Supports exact-input and exact-output swaps.
 
     **Address:** [`0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428`](https://seitrace.com/address/0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428)
 
@@ -31,7 +33,7 @@ DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liq
   </Accordion>
 
   <Accordion title="QuoterV2">
-    Provides gas-efficient price quotes for swaps without executing them. Returns expected output amounts and price impacts.
+    Quotes swaps through DEX V2 pools without executing them. Returns the output (or input) amount, the post-swap `sqrtPriceX96`, the number of initialized ticks crossed, and a gas estimate. Quote functions are not `view`; call them off-chain via `eth_call`.
 
     **Address:** [`0x38F759cf0Af1D0dcAEd723a3967A3B658738eDe9`](https://seitrace.com/address/0x38F759cf0Af1D0dcAEd723a3967A3B658738eDe9)
 
@@ -47,7 +49,7 @@ DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liq
   </Accordion>
 
   <Accordion title="DragonswapInterfaceMulticall">
-    Batches multiple read calls into a single request. Returns block timestamp alongside results for time-sensitive queries.
+    Batches multiple calls into a single request. `multicall` returns the block number alongside the results; `getCurrentBlockTimestamp()` and `getEthBalance()` are separate helper functions.
 
     **Address:** [`0x2183BB693DFb41047f3812975b511e272883CfAA`](https://seitrace.com/address/0x2183BB693DFb41047f3812975b511e272883CfAA)
 
@@ -71,7 +73,7 @@ DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liq
   </Accordion>
 
   <Accordion title="ProxyAdmin">
-    Admin contract for managing upgradeable proxy contracts. Controls upgrade authorization.
+    Admin contract for upgradeable proxies. Administers the NonfungibleTokenPositionDescriptor proxy at [`0x54e8514f5DB8C7d12F38e039dC4dD01A2fa8aece`](https://seitrace.com/address/0x54e8514f5DB8C7d12F38e039dC4dD01A2fa8aece) and controls its upgrades.
 
     **Address:** [`0x3fE66fAD6907495076931d553888faD0DBb429B7`](https://seitrace.com/address/0x3fE66fAD6907495076931d553888faD0DBb429B7)
 
@@ -79,7 +81,7 @@ DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liq
   </Accordion>
 
   <Accordion title="NFTDescriptor">
-    Generates on-chain SVG artwork and metadata for liquidity position NFTs.
+    Library that generates on-chain SVG artwork and metadata for liquidity position NFTs. It is linked into the NonfungibleTokenPositionDescriptor implementation and is not meant to be called directly.
 
     **Address:** [`0x66252e36073532Bc3277C47C4ed2800eeF83Cb1c`](https://seitrace.com/address/0x66252e36073532Bc3277C47C4ed2800eeF83Cb1c)
 
@@ -87,15 +89,19 @@ DEX V2 contracts deployed on Sei Network (pacific-1), featuring concentrated liq
   </Accordion>
 
   <Accordion title="NonfungibleTokenPositionDescriptor">
-    Provides token URI metadata for position NFTs, including pool details and position parameters.
+    Provides token URI metadata for position NFTs, including pool details and position parameters. The NonfungiblePositionManager uses the upgradeable proxy below, which is administered by ProxyAdmin.
 
-    **Address:** [`0x10B03532106ebd61A08EFf992e1422bb278D4F1f`](https://seitrace.com/address/0x10B03532106ebd61A08EFf992e1422bb278D4F1f)
+    **Address (proxy):** [`0x54e8514f5DB8C7d12F38e039dC4dD01A2fa8aece`](https://seitrace.com/address/0x54e8514f5DB8C7d12F38e039dC4dD01A2fa8aece)
 
-    **ABI:** [NonfungibleTokenPositionDescriptor.json](https://raw.githubusercontent.com/Miljan9602/docs/main/contracts/abi/dex-v2/NonfungibleTokenPositionDescriptor.json)
+    **Implementation:** [`0x10B03532106ebd61A08EFf992e1422bb278D4F1f`](https://seitrace.com/address/0x10B03532106ebd61A08EFf992e1422bb278D4F1f)
+
+    **ABI:** [NonfungibleTokenPositionDescriptor.json](https://raw.githubusercontent.com/Miljan9602/docs/main/contracts/abi/dex-v2/NonfungibleTokenPositionDescriptor.json) (implementation ABI; call it at the proxy address)
   </Accordion>
 
   <Accordion title="DragonswapSplitRouter">
-    Splits swaps across V1 and V2 pools for optimal execution. Finds the best price across both protocol versions.
+    Executes or quotes a caller-supplied split route across DEX V1 pairs and DEX V2 pools. Route discovery is done off-chain by the routing API (`GET https://sei-api.dragonswap.app/api/v4/quote`); see [Quote](/contracts/dex-api/quote).
+
+    `exactInputWithPermit` and `exactOutputWithPermit` pull input tokens through [Permit2](/concepts/permit2) at [`0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98`](https://seitrace.com/address/0xC6b7aC7Bbd8b456b67e8440694503cAC2Afb1d98).
 
     **Address:** [`0xCaCbF14f07AF3Be93C6fc8bF0a43f9279F792199`](https://seitrace.com/address/0xCaCbF14f07AF3Be93C6fc8bF0a43f9279F792199)
 
