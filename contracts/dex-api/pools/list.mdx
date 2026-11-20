@@ -35,16 +35,16 @@ No parameters are required for this endpoint.
 </ResponseField>
 
 <ResponseField name="incentives" type="array">
-  Array of active incentive programs.
+  Array of incentive programs for the listed pools, including programs that have already ended. Compare `end_time` with the current time to find active programs.
 
   <Expandable title="Incentive object">
-    <ResponseField name="start_time" type="string">
-      Incentive program start time.
+    <ResponseField name="start_time" type="number">
+      Incentive program start time, as a Unix timestamp (seconds).
     </ResponseField>
-    <ResponseField name="end_time" type="string">
-      Incentive program end time.
+    <ResponseField name="end_time" type="number">
+      Incentive program end time, as a Unix timestamp (seconds).
     </ResponseField>
-    <ResponseField name="reward" type="string">
+    <ResponseField name="reward" type="number">
       Total reward amount.
     </ResponseField>
     <ResponseField name="reward_token" type="string">
@@ -59,19 +59,19 @@ No parameters are required for this endpoint.
     <ResponseField name="incentive_id" type="string">
       Unique identifier of the incentive.
     </ResponseField>
-    <ResponseField name="apr" type="number">
-      Annual percentage rate of the incentive.
+    <ResponseField name="apr" type="string">
+      Annual percentage rate of the incentive, in percent, as a numeric string (e.g. `"99114.990601091"`).
     </ResponseField>
-    <ResponseField name="title" type="string">
+    <ResponseField name="title" type="string | null">
       Display title of the incentive program.
     </ResponseField>
-    <ResponseField name="liquidity_usd" type="number">
-      Total liquidity in USD participating in the incentive.
+    <ResponseField name="liquidity_usd" type="string">
+      Liquidity participating in the incentive, in USD, as a numeric string (e.g. `"0"`).
     </ResponseField>
-    <ResponseField name="owner" type="string">
+    <ResponseField name="owner" type="string | null">
       Address of the incentive creator.
     </ResponseField>
-    <ResponseField name="campaign" type="string">
+    <ResponseField name="campaign" type="string | null">
       Campaign identifier.
     </ResponseField>
   </Expandable>
@@ -91,71 +91,125 @@ No parameters are required for this endpoint.
       Address of the second token in the pair.
     </ResponseField>
     <ResponseField name="first_token_reserve" type="number">
-      Reserve amount of the first token.
+      Reserve of `token0`, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="second_token_reserve" type="number">
-      Reserve amount of the second token.
+      Reserve of `token1`, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="liquidity" type="number">
       Total pool liquidity in USD.
     </ResponseField>
     <ResponseField name="daily_volume" type="number">
-      24-hour trading volume in USD.
+      Trading volume over the last 24 hours, in USD.
     </ResponseField>
     <ResponseField name="daily_fees" type="number">
-      24-hour fees collected in USD.
+      Fees collected over the last 24 hours, in USD.
+    </ResponseField>
+    <ResponseField name="hourly_volume" type="number | null">
+      Trading volume over the last 60 minutes, in USD.
+    </ResponseField>
+    <ResponseField name="hourly_fees" type="number | null">
+      Fees collected over the last 60 minutes, in USD.
+    </ResponseField>
+    <ResponseField name="hourly_swaps_count" type="number | null">
+      Number of swaps over the last 60 minutes.
     </ResponseField>
     <ResponseField name="type" type="string">
-      Pool type: `V3_POOL` or `V2_POOL`.
+      Pool type: `V3_POOL` or `V2_POOL`. `V2_POOL` = DEX V1 (constant-product) pool; `V3_POOL` = DEX V2 (concentrated-liquidity) pool.
     </ResponseField>
     <ResponseField name="fee_tier" type="number">
-      Fee tier percentage for the pool.
+      Swap fee as a percentage, e.g. `0.3` = 0.3%. Observed values: `0.01`, `0.05`, and `0.3` for `V3_POOL`; `0.3` for `V2_POOL`.
     </ResponseField>
-    <ResponseField name="booster_farm_address" type="string">
+    <ResponseField name="booster_farm_address" type="string | null">
       Address of the associated booster farm, if any.
     </ResponseField>
-    <ResponseField name="incentive_id" type="string">
+    <ResponseField name="incentive_id" type="string | null">
       Associated incentive identifier, if any.
     </ResponseField>
     <ResponseField name="apy_booster" type="number">
       APY boost from the booster farm.
     </ResponseField>
     <ResponseField name="apr" type="number">
-      Annual percentage rate for the pool.
+      Annual percentage rate for the pool, in percent, based on the last 24 hours of fees (`daily_fees × 365 / liquidity × 100`).
+    </ResponseField>
+    <ResponseField name="pool_created_at" type="number">
+      Pool creation time, as a Unix timestamp (seconds).
+    </ResponseField>
+    <ResponseField name="base_apr" type="number">
+      Base APR, in percent.
+    </ResponseField>
+    <ResponseField name="boosted_apr" type="number">
+      Boosted APR, in percent.
+    </ResponseField>
+    <ResponseField name="liquidity_change_24h" type="number | null">
+      Percentage change in `liquidity` over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="volume_change_24h" type="number | null">
+      Percentage change in 24-hour trading volume compared with 24 hours earlier.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "tokens": [
     {
-      "address": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
+      "address": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
       "name": "USDC",
       "symbol": "USDC",
-      "usd_price": 1.0,
+      "usd_price": 1,
       "decimals": 6
+    },
+    {
+      "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "name": "Wrapped SEI",
+      "symbol": "WSEI",
+      "usd_price": 0.03752982181635062,
+      "decimals": 18
     }
   ],
-  "incentives": [],
+  "incentives": [
+    {
+      "start_time": 1733153400,
+      "end_time": 1735729200,
+      "reward": 243000,
+      "reward_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "refundee": "0xfec4fa7d245c2588686483c8246d5d308cab8c74",
+      "pool": "0x9e0f3349580ebdfd546effb0def17100c60a7af9",
+      "incentive_id": "0xb33c5c349fb91286610e15d89974abd8c5a87ffcb0cb279654aa9281e0300994",
+      "apr": "99114.990601091",
+      "title": null,
+      "liquidity_usd": "0",
+      "owner": null,
+      "campaign": null
+    }
+  ],
   "pools": [
     {
-      "pool_address": "0x95e351f268918cf85391857d91f3f63cd04215d5",
-      "token0_address": "0x3894085ef7ff0f0aedf52e2a2704928d1ec074f1",
-      "token1_address": "0xb75d0b03c06a926e488e2659df1a861f860bd3d1",
-      "first_token_reserve": 4.869369,
-      "second_token_reserve": 10.245071,
-      "liquidity": 15.11444,
-      "daily_volume": 11.213732,
-      "daily_fees": 0.033641,
+      "pool_address": "0xcca2352200a63eb0aaba2d40ba69b1d32174f285",
+      "token0_address": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+      "token1_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_token_reserve": 2569836.648754,
+      "second_token_reserve": 113585225.47716,
+      "liquidity": 6832669.921882,
+      "daily_volume": 1213033.070045,
+      "daily_fees": 3639.099210135,
+      "hourly_volume": 21915.720953,
+      "hourly_fees": 65.747162859,
+      "hourly_swaps_count": 26,
       "type": "V3_POOL",
       "fee_tier": 0.3,
       "booster_farm_address": null,
       "incentive_id": null,
       "apy_booster": 0,
-      "apr": 81.24043
+      "apr": 19.44,
+      "pool_created_at": 1753355679,
+      "base_apr": 19.44,
+      "boosted_apr": 19.44,
+      "liquidity_change_24h": -2.1,
+      "volume_change_24h": 10.6
     }
   ]
 }

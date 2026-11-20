@@ -4,44 +4,66 @@ description: "Aggregated staking statistics for a specific user"
 api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/stats/{user}"
 ---
 
-<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
-  Staking contract address
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0xb71886c52d754cf2b1d3d866c7cfe9eec01418a7">
+  Staking contract address. Any other address returns `404` (`staker_address_not_found`).
 </ParamField>
 
 <ParamField path="user" type="string" required>
-  User wallet address
+  User wallet address (case-insensitive)
 </ParamField>
 
+## Response Fields
+
 <ResponseField name="status" type="string">
-  Response status indicator
+  `"ok"` on success, `"fail"` on error
 </ResponseField>
 
-<ResponseField name="stats" type="object|null">
-  User staking statistics, or null if the user has no staking history
+<ResponseField name="stats" type="object | null">
+  User staking statistics, or `null` if the user has no staking history. All values are strings in the token's smallest unit.
 
   <Expandable title="Stats object properties">
-    <ResponseField name="total_DRG_earned" type="number">
-      Total DRG tokens earned by the user
+    <ResponseField name="total_DRG_earned" type="string">
+      Total DRG earned by the user (18 decimals)
     </ResponseField>
 
-    <ResponseField name="total_USDC_earned" type="number">
-      Total USDC earned by the user
+    <ResponseField name="total_USDC_earned" type="string">
+      Total USDC earned by the user (6 decimals)
     </ResponseField>
 
-    <ResponseField name="total_staked" type="number">
-      Total amount currently staked by the user
+    <ResponseField name="total_staked" type="string">
+      DRG currently staked by the user (18 decimals)
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "stats": {
-    "total_DRG_earned": 1250.75,
-    "total_USDC_earned": 89.32,
-    "total_staked": 50000.0
+    "total_DRG_earned": "7776203612368344773486",
+    "total_USDC_earned": "142948930",
+    "total_staked": "15223764340694713489793"
+  }
+}
+```
+
+```json 200 - No Staking History
+{
+  "status": "ok",
+  "stats": null
+}
+```
+
+```json 404 - Staker Address Not Found
+{
+  "status": "fail",
+  "error": {
+    "code": 404,
+    "type": "staker_address_not_found",
+    "message": "Staker address not found"
   }
 }
 ```

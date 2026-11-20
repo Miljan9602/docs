@@ -4,36 +4,70 @@ description: "Transaction history for a farm (deposits, withdrawals, payouts)"
 api: "GET https://sei-api.dragonswap.app/api/v1/farms/{address}/history"
 ---
 
-### Path Parameters
+<Note>
+  Events of all types are returned in a single array, newest first. There is no pagination, and each event type (`deposits`, `withdraws`, `payouts`) returns at most 1000 records. When a farm has more events of a type than that, the response does not contain all of them.
+</Note>
+
+## Path Parameters
 
 <ParamField path="address" type="string" required default="0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9">
-  Farm contract address
+  Farm contract address (case-insensitive)
 </ParamField>
 
-### Response
+## Response Fields
 
 <ResponseField name="status" type="string">
   `"ok"` on success
 </ResponseField>
 
-<ResponseField name="tokens" type="array">
-  Tokens associated with this farm (reward and booster tokens).
+<ResponseField name="tokens" type="object[]">
+  The farm's reward token and, for `boosted` farms, its booster token. Each has `address`, `name`, `symbol`, `usd_price` (number) and `decimals` (number).
 </ResponseField>
 
-<ResponseField name="history" type="array">
-  Array of farm history events. Each contains:
-  - `timestamp` (number) — Unix timestamp
-  - `amount` (number) — Token amount (for deposits/withdrawals)
-  - `user` (string) — User wallet address
-  - `type` (string) — Event type: `"deposits"`, `"withdraws"`, or `"payouts"`
-  - `pooled_token_address` (string) — Pooled token address
-  - `block_number` (number) — Block number
-  - `farm_address` (string) — Farm contract address
-  - `tx_hash` (string) — Transaction hash
+<ResponseField name="history" type="object[]">
+  Farm events, newest first
 
-  Payout events additionally include:
-  - `reward_token_claim` (number) — Reward tokens claimed
-  - `booster_token_claim` (number) — Booster tokens claimed (for boosted farms)
+  <Expandable title="Event object properties">
+    <ResponseField name="type" type="string">
+      Event type: `"deposits"`, `"withdraws"`, or `"payouts"`
+    </ResponseField>
+
+    <ResponseField name="timestamp" type="number">
+      Unix timestamp (seconds)
+    </ResponseField>
+
+    <ResponseField name="user" type="string">
+      User wallet address
+    </ResponseField>
+
+    <ResponseField name="pooled_token_address" type="string">
+      Staked (LP) token address
+    </ResponseField>
+
+    <ResponseField name="block_number" type="number">
+      Block number
+    </ResponseField>
+
+    <ResponseField name="farm_address" type="string">
+      Farm contract address
+    </ResponseField>
+
+    <ResponseField name="tx_hash" type="string">
+      Transaction hash
+    </ResponseField>
+
+    <ResponseField name="amount" type="number">
+      Staked token amount (human-readable). Present on `deposits` and `withdraws` events only.
+    </ResponseField>
+
+    <ResponseField name="reward_token_claim" type="number">
+      Reward tokens claimed (human-readable). Present on `payouts` events only.
+    </ResponseField>
+
+    <ResponseField name="booster_token_claim" type="number">
+      Booster tokens claimed (human-readable). Present on every `payouts` event; `0` for `basic` farms.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseExample>
@@ -42,17 +76,35 @@ api: "GET https://sei-api.dragonswap.app/api/v1/farms/{address}/history"
   "status": "ok",
   "tokens": [
     {
+      "address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+      "name": "Dragonswap Token",
+      "symbol": "DRG",
+      "usd_price": 0.011413001428297832,
+      "decimals": 18
+    },
+    {
       "address": "0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1",
       "name": "MILLI",
       "symbol": "MILLI",
-      "usd_price": 0.0000014167,
+      "usd_price": 9.554994879996409e-9,
       "decimals": 6
     }
   ],
   "history": [
     {
+      "timestamp": 1773295707,
+      "user": "0xfa815266b3b254f35b56e31717de2c1104497b42",
+      "type": "payouts",
+      "pooled_token_address": "0xf1d35df54a1247b047a52f8acc2359b415ba8a9a",
+      "reward_token_claim": 3612.095245,
+      "booster_token_claim": 0.420011075,
+      "block_number": 197683839,
+      "farm_address": "0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9",
+      "tx_hash": "0xb16132083611212726475bb449a9ec0a96fc86482500d24d916af15081b7bea6"
+    },
+    {
+      "amount": 9.862195368610529,
       "timestamp": 1771334895,
-      "amount": 9.862195,
       "user": "0xdfdbf00cbf4dbe05150178a10a156ea599e53e29",
       "type": "withdraws",
       "pooled_token_address": "0xf1d35df54a1247b047a52f8acc2359b415ba8a9a",
@@ -61,6 +113,17 @@ api: "GET https://sei-api.dragonswap.app/api/v1/farms/{address}/history"
       "tx_hash": "0x307da6591c2276d3a2ab9c20cec15faf435ccae726c64c3118022fd0583bbc0d"
     }
   ]
+}
+```
+
+```json 404 - Farm Not Found
+{
+  "status": "error",
+  "error": {
+    "code": 404,
+    "type": "farm_not_found",
+    "message": "Farm does not exist."
+  }
 }
 ```
 </ResponseExample>

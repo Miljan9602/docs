@@ -1,23 +1,34 @@
 ---
 title: "Incentive Tokens"
-description: "Token IDs associated with a specific incentive program"
+description: "Position token IDs staked in a specific incentive program"
 api: "GET https://sei-api.dragonswap.app/api/v1/incentives/{incentive_id}/tokens"
 ---
 
-<ParamField path="incentive_id" type="string" required default="0x6a785d3a701decf7668d554ce30c55f0dbaef2ac1853e75a2044f8b70c3249fe">
-  Unique incentive identifier.
+## Path Parameters
+
+<ParamField path="incentive_id" type="string" required default="0xbddb5830bc2e81d53e1e69c2c3c8d4a2f163c90b0a150ffc7e5006d2d9cf7b71">
+  Unique incentive identifier (the `incentive_id` from [List Incentives](/contracts/dex-api/incentives/list)). An unknown or malformed ID returns `200` with an empty `token_ids` array.
 </ParamField>
+
+## Response Fields
 
 <ResponseField name="status" type="string">
   Request status indicator.
 </ResponseField>
 
 <ResponseField name="token_ids" type="array">
-  Array of token IDs staked in the incentive program.
+  Token IDs (integers) of the DEX V2 (concentrated-liquidity) position NFTs staked in the incentive program. Empty array when none are staked.
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
+{
+  "status": "ok",
+  "token_ids": [251932, 251934]
+}
+```
+
+```json 200 - No Staked Positions
 {
   "status": "ok",
   "token_ids": []

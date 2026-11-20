@@ -7,13 +7,13 @@ api: "GET https://sei-api.dragonswap.app/api/v1/tokens/{address}"
 ## Path Parameters
 
 <ParamField path="address" type="string" required default="0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7">
-  Token contract address.
+  Token contract address (case-insensitive).
 </ParamField>
 
 ## Response
 
 <ResponseField name="status" type="string">
-  Request status indicator.
+  Request status indicator: `ok` on success, `fail` when the token is not found (HTTP 404).
 </ResponseField>
 
 <ResponseField name="token" type="object">
@@ -42,28 +42,80 @@ api: "GET https://sei-api.dragonswap.app/api/v1/tokens/{address}"
       Trading volume over the last 24 hours in USD.
     </ResponseField>
     <ResponseField name="daily_transactions" type="number">
-      Number of transactions over the last 24 hours.
+      Cumulative transaction count. Despite the name, it is not limited to the last 24 hours.
     </ResponseField>
-    <ResponseField name="description" type="string|null">
+    <ResponseField name="verified" type="boolean">
+      `true` if the token is on the [approved token list](/contracts/dex-api/tokens/approved).
+    </ResponseField>
+    <ResponseField name="category" type="string | null">
+      Token category. Observed values: `wrapped`, `stablecoin`, `defi`, `lst`, `meme`, `native`, `ai`.
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
       Token description, if available.
+    </ResponseField>
+    <ResponseField name="website" type="string | null">
+      Project website URL, if available.
+    </ResponseField>
+    <ResponseField name="socials" type="object | null">
+      Social links, if available. Only the keys that have a link are present.
+
+      <Expandable title="Socials object">
+        <ResponseField name="x" type="string">
+          X (Twitter) URL.
+        </ResponseField>
+        <ResponseField name="telegram" type="string">
+          Telegram URL.
+        </ResponseField>
+        <ResponseField name="discord" type="string">
+          Discord URL.
+        </ResponseField>
+        <ResponseField name="github" type="string">
+          GitHub URL.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="liquidity_change_24h" type="number | null">
+      Percentage change in `liquidity` over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="volume_change_24h" type="number | null">
+      Percentage change in 24-hour trading volume compared with 24 hours earlier.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "token": {
     "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
     "name": "Wrapped SEI",
     "symbol": "WSEI",
-    "usd_price": 0.0619481035298862,
+    "usd_price": 0.037520144113591135,
     "decimals": 18,
-    "liquidity": 6868740.3019221,
-    "daily_volume": 1887192.5865448,
-    "daily_transactions": 12323205,
-    "description": null
+    "liquidity": 5398026.7529777,
+    "daily_volume": 631906.77059529,
+    "daily_transactions": 14016991,
+    "verified": true,
+    "category": "wrapped",
+    "description": "Sei is a high-performance Layer 1 blockchain that scales the EVM with parallelized execution, enabling faster transactions, low fees, and seamless smart contract deployment.",
+    "website": "https://www.sei.io/",
+    "socials": {
+      "x": "https://x.com/SeiNetwork"
+    },
+    "liquidity_change_24h": -0.35,
+    "volume_change_24h": -38.48
+  }
+}
+```
+
+```json 404 - Token Not Found
+{
+  "status": "fail",
+  "error": {
+    "code": 404,
+    "type": "token_not_found",
+    "message": "Token not found"
   }
 }
 ```

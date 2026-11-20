@@ -1,73 +1,90 @@
 ---
 title: "Staking Emissions"
-description: "Staking deposit records for a staking contract"
+description: "Protocol reward emissions deposited into the staking contract"
 api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/emissions"
 ---
 
-<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
-  Staking contract address
+Returns the reward emissions (in DRG or USDC) deposited into the staking contract for distribution to stakers. These are the same records as `protocol_rewards` in the [Staking Rewards](/contracts/dex-api/staking/rewards) response. Records are returned newest first, with no pagination.
+
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0xb71886c52d754cf2b1d3d866c7cfe9eec01418a7">
+  Staking contract address. Any other address returns `"deposits": []`.
 </ParamField>
 
+## Response Fields
+
 <ResponseField name="status" type="string">
-  Response status indicator
+  `"ok"` on success
 </ResponseField>
 
 <ResponseField name="deposits" type="object[]">
-  Array of deposit records
+  Reward emission records, newest first
 
   <Expandable title="Deposit object properties">
     <ResponseField name="tx_hash" type="string">
-      Transaction hash of the deposit
+      Transaction hash of the emission
     </ResponseField>
 
     <ResponseField name="token_address" type="string">
-      Address of the deposited token
+      Reward token address: DRG (`0x0a526e425809aea71eb279d24ae22dee6c92a4fe`) or USDC (`0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392`)
     </ResponseField>
 
     <ResponseField name="amount" type="number">
-      Human-readable deposit amount
+      Human-readable emission amount
     </ResponseField>
 
     <ResponseField name="amount_wei" type="string">
-      Deposit amount in wei
+      Emission amount in the token's smallest unit (18 decimals for DRG, 6 for USDC)
     </ResponseField>
 
     <ResponseField name="created_at" type="string">
-      Unix timestamp of the deposit
+      Unix timestamp in seconds, as a string
     </ResponseField>
 
     <ResponseField name="apr" type="number">
-      Annual percentage rate at the time of deposit
+      Staking APR at the time of the emission, in percent
     </ResponseField>
 
     <ResponseField name="reward_per_usd_staked" type="number">
-      Reward earned per USD staked
+      Reward per USD staked
     </ResponseField>
 
     <ResponseField name="token_usd_price" type="number">
-      USD price of the token at the time of deposit
+      USD price of the token at the time of the emission
     </ResponseField>
 
-    <ResponseField name="buy_tx_hash" type="string|null">
+    <ResponseField name="buy_tx_hash" type="string | null">
       Transaction hash of the token buy, if applicable
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "deposits": [
     {
-      "tx_hash": "0x701a02ecbd8cdc39d776e4ea2bfb4da96357628849ddb6b69c86252215fb80c3",
+      "tx_hash": "0x2df8e2128d15a857ffd760d68f6b02a6b347fd07b86c6c41c7f5268bb2ed8204",
       "token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
-      "amount": 116365.446014,
-      "amount_wei": "116365446014000000000000",
-      "created_at": "1772906415",
-      "apr": 229.66021502066,
-      "reward_per_usd_staked": 0.0045932043004003,
-      "token_usd_price": 0.017187232709559942,
+      "amount": 29757.253716,
+      "amount_wei": "29757253716000000000000",
+      "created_at": "1783702814",
+      "apr": 88.939626238223,
+      "reward_per_usd_staked": 0.0011058165928402,
+      "token_usd_price": 0.010081575499712711,
+      "buy_tx_hash": null
+    },
+    {
+      "tx_hash": "0x9532882a879da6fd3fea5dacdcb2c2d724784915676adf52f4e0525122667dfa",
+      "token_address": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+      "amount": 629.613929,
+      "amount_wei": "629613929",
+      "created_at": "1769801645",
+      "apr": 184.00170471178,
+      "reward_per_usd_staked": 0.0011592107393126,
+      "token_usd_price": 1.0006131865580823,
       "buy_tx_hash": null
     }
   ]

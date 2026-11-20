@@ -1,31 +1,130 @@
 ---
 title: "User Pools"
-description: "A user's liquidity pool positions across V2 and V3 pools"
+description: "A user's liquidity positions across V2 and V3 pools"
 api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/pools"
 ---
 
-### Path Parameters
+## Path Parameters
 
 <ParamField path="address" type="string" required>
-  User wallet address
+  User wallet address (case-insensitive). A value that is not a valid address returns `200` with empty arrays.
 </ParamField>
 
-### Response
+## Response Fields
 
 <ResponseField name="status" type="string">
   `"ok"` on success
 </ResponseField>
 
 <ResponseField name="tokens" type="array">
-  Tokens involved in the user's pool positions. Each entry includes `address`, `name`, `symbol`, `usd_price`, and `decimals`.
+  Tokens on both sides of every pool in `pools`.
+
+  <Expandable title="Token object">
+    <ResponseField name="address" type="string">
+      Token contract address.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full token name.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Token ticker symbol.
+    </ResponseField>
+    <ResponseField name="usd_price" type="number">
+      Current USD price of the token.
+    </ResponseField>
+    <ResponseField name="decimals" type="number">
+      Number of decimals the token uses.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="pools" type="array">
-  The user's liquidity pool positions across V2 and V3 pools.
+  The user's liquidity positions. `V2_POOL` = DEX V1 (constant-product) pool; `V3_POOL` = DEX V2 (concentrated-liquidity) pool. A `V2_POOL` entry is the user's LP-token position in that pool. Each `V3_POOL` position is returned as its own entry, so the same `pool_address` can appear more than once; entries do not include a position token ID or tick range.
+
+  <Expandable title="Pool position object">
+    <ResponseField name="pool_address" type="string">
+      Contract address of the pool.
+    </ResponseField>
+    <ResponseField name="token0_address" type="string">
+      Address of the first token in the pair.
+    </ResponseField>
+    <ResponseField name="token1_address" type="string">
+      Address of the second token in the pair.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Pool type: `"V2_POOL"` or `"V3_POOL"`.
+    </ResponseField>
+    <ResponseField name="fee_tier" type="number">
+      Pool fee in percent (e.g. `0.3` = 0.3%).
+    </ResponseField>
+    <ResponseField name="lp_balance" type="number">
+      The user's LP-token balance. Present on `V2_POOL` entries only; the key is absent on `V3_POOL` entries.
+    </ResponseField>
+    <ResponseField name="first_token_amount" type="number">
+      Amount of `token0` in the user's position, in token units (not wei).
+    </ResponseField>
+    <ResponseField name="second_token_amount" type="number">
+      Amount of `token1` in the user's position, in token units (not wei).
+    </ResponseField>
+    <ResponseField name="total_liquidity_usd" type="number">
+      USD value of the user's position.
+    </ResponseField>
+    <ResponseField name="first_token_reserve" type="number">
+      Pool reserve of `token0`, in token units.
+    </ResponseField>
+    <ResponseField name="second_token_reserve" type="number">
+      Pool reserve of `token1`, in token units.
+    </ResponseField>
+    <ResponseField name="liquidity" type="number">
+      Total pool liquidity in USD.
+    </ResponseField>
+    <ResponseField name="daily_volume" type="number">
+      24-hour pool trading volume in USD.
+    </ResponseField>
+    <ResponseField name="daily_fees" type="number">
+      24-hour pool fees in USD.
+    </ResponseField>
+    <ResponseField name="hourly_volume" type="number | null">
+      Last-hour pool trading volume in USD, or `null` when no hourly data is available.
+    </ResponseField>
+    <ResponseField name="hourly_fees" type="number | null">
+      Last-hour pool fees in USD, or `null` when no hourly data is available.
+    </ResponseField>
+    <ResponseField name="hourly_swaps_count" type="number | null">
+      Last-hour swap count, or `null` when no hourly data is available.
+    </ResponseField>
+    <ResponseField name="apr" type="number">
+      Pool APR in percent.
+    </ResponseField>
+    <ResponseField name="base_apr" type="number">
+      Base pool APR in percent.
+    </ResponseField>
+    <ResponseField name="boosted_apr" type="number">
+      Boosted pool APR in percent.
+    </ResponseField>
+    <ResponseField name="apy_booster" type="number">
+      APY boost from the booster farm.
+    </ResponseField>
+    <ResponseField name="booster_farm_address" type="string | null">
+      Address of the associated booster farm, if any.
+    </ResponseField>
+    <ResponseField name="incentive_id" type="string | null">
+      Associated incentive identifier, if any.
+    </ResponseField>
+    <ResponseField name="pool_created_at" type="number | null">
+      Pool creation time, as a Unix timestamp (seconds).
+    </ResponseField>
+    <ResponseField name="liquidity_change_24h" type="number | null">
+      24-hour change in pool liquidity, or `null`.
+    </ResponseField>
+    <ResponseField name="volume_change_24h" type="number | null">
+      24-hour change in pool volume, or `null`.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="incentives" type="array">
-  Active incentive programs associated with the user's pool positions.
+  Incentive programs linked to the user's pools. Empty array when there are none.
 </ResponseField>
 
 <ResponseExample>
@@ -34,15 +133,87 @@ api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/pools"
   "status": "ok",
   "tokens": [
     {
-      "address": "0x5cf6826140c1c56ff49c808a1a75407cd1df9423",
-      "name": "iSEI",
-      "symbol": "iSEI",
-      "usd_price": 0.065427,
-      "decimals": 6
+      "address": "0x160345fc359604fc6e70e3c5facbde5f7a9342d8",
+      "name": "WETH",
+      "symbol": "WETH",
+      "usd_price": 1805.032937281,
+      "decimals": 18
+    },
+    {
+      "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "name": "Wrapped SEI",
+      "symbol": "WSEI",
+      "usd_price": 0.03750793143073396,
+      "decimals": 18
     }
   ],
-  "pools": [],
-  "incentives": []
+  "incentives": [],
+  "pools": [
+    {
+      "pool_address": "0xdfe611c5a718a0525c6261cf1f100e8db776b4b4",
+      "token0_address": "0x160345fc359604fc6e70e3c5facbde5f7a9342d8",
+      "token1_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_token_reserve": 0.064616145844821,
+      "second_token_reserve": 3106.3913390018,
+      "liquidity": 232.72681863606,
+      "daily_volume": 4.3260012261007,
+      "daily_fees": 0.012978003678302,
+      "hourly_volume": null,
+      "hourly_fees": null,
+      "hourly_swaps_count": null,
+      "type": "V2_POOL",
+      "fee_tier": 0.3,
+      "booster_farm_address": null,
+      "incentive_id": null,
+      "apy_booster": 0,
+      "apr": 2.03542,
+      "pool_created_at": 1719057214,
+      "base_apr": 2.03542,
+      "boosted_apr": 2.03542,
+      "liquidity_change_24h": null,
+      "volume_change_24h": null,
+      "lp_balance": 0.12,
+      "first_token_amount": 0.000628,
+      "second_token_amount": 30.19,
+      "total_liquidity_usd": 2.27
+    },
+    {
+      "pool_address": "0xe0f20947365d2fcf5fabd14ad4415ab18191bd3a",
+      "token0_address": "0x160345fc359604fc6e70e3c5facbde5f7a9342d8",
+      "token1_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_token_reserve": 2.20415891267,
+      "second_token_reserve": 332453.48238461,
+      "liquidity": 16403.083419406,
+      "daily_volume": 45.1683224982,
+      "daily_fees": 0.1355049674946,
+      "hourly_volume": null,
+      "hourly_fees": null,
+      "hourly_swaps_count": null,
+      "type": "V3_POOL",
+      "fee_tier": 0.3,
+      "booster_farm_address": null,
+      "incentive_id": null,
+      "apy_booster": 0,
+      "apr": 0.30152,
+      "pool_created_at": 1724176517,
+      "base_apr": 0.30152,
+      "boosted_apr": 0.30152,
+      "liquidity_change_24h": null,
+      "volume_change_24h": null,
+      "first_token_amount": 0,
+      "second_token_amount": 25,
+      "total_liquidity_usd": 0.94
+    }
+  ]
+}
+```
+
+```json 200 - No Positions
+{
+  "status": "ok",
+  "tokens": [],
+  "incentives": [],
+  "pools": []
 }
 ```
 </ResponseExample>

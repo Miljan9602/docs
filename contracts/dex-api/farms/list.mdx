@@ -1,45 +1,113 @@
 ---
 title: "List Farms"
-description: "Returns all active yield farms with their associated tokens and pools"
+description: "Returns all yield farms, including ended ones, with their associated tokens and pools"
 api: "GET https://sei-api.dragonswap.app/api/v1/farms"
 ---
 
-### Response
+<Note>
+  The response includes farms that have already ended; currently every returned farm has ended (the latest `end_timestamp` is `1758535904`, 2025-09-22). To find active farms, keep only farms whose `end_timestamp` is in the future. `apy` and `tvl` are still reported for ended farms.
+</Note>
+
+## Response Fields
 
 <ResponseField name="status" type="string">
   `"ok"` on success
 </ResponseField>
 
-<ResponseField name="tokens" type="array">
-  Tokens used across farms. Each contains:
-  - `address` (string) — Token contract address
-  - `name` (string) — Token name
-  - `symbol` (string) — Token symbol
-  - `usd_price` (number) — Current USD price
-  - `decimals` (number) — Token decimals
+<ResponseField name="tokens" type="object[]">
+  Every reward token, booster token and pool token referenced by the farms and pools in this response
+
+  <Expandable title="Token object properties">
+    <ResponseField name="address" type="string">
+      Token contract address
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Token name
+    </ResponseField>
+
+    <ResponseField name="symbol" type="string">
+      Token symbol
+    </ResponseField>
+
+    <ResponseField name="usd_price" type="number">
+      Current USD price
+    </ResponseField>
+
+    <ResponseField name="decimals" type="number">
+      Token decimals
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="pools" type="array">
-  Pools associated with the farms (same shape as the Pools endpoint).
+<ResponseField name="pools" type="object[]">
+  The pools whose LP tokens are staked in the farms (one per distinct `pooled_token_address`), with the same shape as pools in [List Pools](/contracts/dex-api/pools/list). `type` is `"V2_POOL"` or `"V3_POOL"`: `V2_POOL` = DEX V1 (constant-product) pool; `V3_POOL` = DEX V2 (concentrated-liquidity) pool.
 </ResponseField>
 
-<ResponseField name="farms" type="array">
-  Array of farm objects. Each contains:
-  - `farm_address` (string) — Farm contract address
-  - `pooled_token_address` (string) — Staked token address
-  - `reward_token_address` (string) — Reward token address
-  - `booster_token_address` (string | null) — Booster token address
-  - `apy` (number) — Annual percentage yield
-  - `tvl` (number) — Total value locked in USD
-  - `type` (string) — Farm type: `"basic"` or `"boosted"`
-  - `unlock_rate` (number) — Reward per second
-  - `booster_unlock_rate` (number | null) — Booster reward per second
-  - `is_lp_pooled_token` (boolean) — Whether staked token is an LP token
-  - `end_timestamp` (number) — Farm end timestamp
-  - `start_timestamp` (number) — Farm start timestamp
-  - `total_rewards_usd` (number) — Total rewards value in USD
-  - `campaign` (string | null) — Campaign identifier
-  - `is_funded` (boolean | null) — Whether the farm is funded
+<ResponseField name="farms" type="object[]">
+  Array of farm objects
+
+  <Expandable title="Farm object properties">
+    <ResponseField name="farm_address" type="string">
+      Farm contract address
+    </ResponseField>
+
+    <ResponseField name="pooled_token_address" type="string">
+      Address of the staked token (the pool's LP token)
+    </ResponseField>
+
+    <ResponseField name="reward_token_address" type="string">
+      Reward token address
+    </ResponseField>
+
+    <ResponseField name="booster_token_address" type="string | null">
+      Booster token address. `null` for `basic` farms.
+    </ResponseField>
+
+    <ResponseField name="apy" type="number">
+      Annual percentage yield, in percent
+    </ResponseField>
+
+    <ResponseField name="tvl" type="number">
+      Total value locked in USD
+    </ResponseField>
+
+    <ResponseField name="type" type="string">
+      Farm type: `"basic"` or `"boosted"`
+    </ResponseField>
+
+    <ResponseField name="unlock_rate" type="number">
+      Reward tokens unlocked per second
+    </ResponseField>
+
+    <ResponseField name="booster_unlock_rate" type="number | null">
+      Booster tokens unlocked per second. `null` for `basic` farms.
+    </ResponseField>
+
+    <ResponseField name="is_lp_pooled_token" type="boolean">
+      Whether the staked token is an LP token
+    </ResponseField>
+
+    <ResponseField name="end_timestamp" type="number">
+      Farm end time, Unix timestamp (seconds)
+    </ResponseField>
+
+    <ResponseField name="start_timestamp" type="number">
+      Farm start time, Unix timestamp (seconds)
+    </ResponseField>
+
+    <ResponseField name="total_rewards_usd" type="number">
+      Total rewards value in USD
+    </ResponseField>
+
+    <ResponseField name="campaign" type="string | null">
+      Campaign name, e.g. `"DS Epoch 2"`
+    </ResponseField>
+
+    <ResponseField name="is_funded" type="boolean | null">
+      Whether the farm is funded. Currently `null` for every farm.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseExample>
@@ -48,14 +116,53 @@ api: "GET https://sei-api.dragonswap.app/api/v1/farms"
   "status": "ok",
   "tokens": [
     {
-      "address": "0x5cf6826140c1c56ff49c808a1a75407cd1df9423",
-      "name": "Dragonswap",
+      "address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+      "name": "Dragonswap Token",
       "symbol": "DRG",
-      "usd_price": 0.001,
+      "usd_price": 0.011413001428297832,
+      "decimals": 18
+    },
+    {
+      "address": "0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1",
+      "name": "MILLI",
+      "symbol": "MILLI",
+      "usd_price": 9.554994879996409e-9,
+      "decimals": 6
+    },
+    {
+      "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "name": "Wrapped SEI",
+      "symbol": "WSEI",
+      "usd_price": 0.03752982181635062,
       "decimals": 18
     }
   ],
-  "pools": [],
+  "pools": [
+    {
+      "pool_address": "0xf1d35df54a1247b047a52f8acc2359b415ba8a9a",
+      "token0_address": "0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1",
+      "token1_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_token_reserve": 2474710987.23,
+      "second_token_reserve": 604.74889857951,
+      "liquidity": 47.291701624907,
+      "daily_volume": 0.020173542256199,
+      "daily_fees": 0.000060520626768597,
+      "hourly_volume": null,
+      "hourly_fees": null,
+      "hourly_swaps_count": null,
+      "type": "V2_POOL",
+      "fee_tier": 0.3,
+      "booster_farm_address": null,
+      "incentive_id": null,
+      "apy_booster": 0,
+      "apr": 0.04671,
+      "pool_created_at": 1717239464,
+      "base_apr": 0.04671,
+      "boosted_apr": 0.04671,
+      "liquidity_change_24h": null,
+      "volume_change_24h": null
+    }
+  ],
   "farms": [
     {
       "farm_address": "0x256df69a9a1e7ccd48ffc4211fcaba39a56635a9",
@@ -64,7 +171,7 @@ api: "GET https://sei-api.dragonswap.app/api/v1/farms"
       "booster_token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
       "apy": 99.0569571014,
       "is_lp_pooled_token": true,
-      "tvl": 114.90638594163,
+      "tvl": 7.6932047982409,
       "type": "boosted",
       "end_timestamp": 1756036800,
       "start_timestamp": 1752580800,

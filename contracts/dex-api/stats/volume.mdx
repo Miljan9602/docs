@@ -6,11 +6,17 @@ api: "GET https://sei-api.dragonswap.app/api/v1/vol"
 
 Returns daily volume statistics for a specific wallet address, including trading volume, swap fees, and transaction count per day.
 
+## Query Parameters
+
 <ParamField query="address" type="string" required>
-  Wallet address to query volume for.
+  Wallet address to query volume for (case-insensitive). If the parameter is missing, invalid, or the wallet has no swaps, the endpoint still returns HTTP 200, with an empty array `[]`.
 </ParamField>
 
-The response is an object keyed by date strings (`YYYY-MM-DD`). Each value contains:
+## Response Fields
+
+The response is an object keyed by date strings (`YYYY-MM-DD`), newest first, with one key per day on which the wallet swapped. It has no `status` field. When there is no data, the response is an empty array `[]` instead of an empty object.
+
+Each value contains:
 
 <ResponseField name="volume_usd" type="number">
   Total trading volume in USD for the day.
@@ -25,18 +31,22 @@ The response is an object keyed by date strings (`YYYY-MM-DD`). Each value conta
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
-  "2025-12-10": {
-    "volume_usd": 402.498,
-    "swap_fee_usd": 1.207,
-    "count": 5
-  },
   "2025-12-23": {
     "volume_usd": 1809.183,
     "swap_fee_usd": 5.276,
     "count": 10
+  },
+  "2025-12-10": {
+    "volume_usd": 402.498,
+    "swap_fee_usd": 1.207,
+    "count": 5
   }
 }
+```
+
+```json 200 - No Activity
+[]
 ```
 </ResponseExample>

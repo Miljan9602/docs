@@ -1,39 +1,41 @@
 ---
 title: "Pool Transactions"
-description: "Swap transactions for a specific pool with aggregate stats"
+description: "Recent swap transactions for a specific pool with 24-hour aggregate stats"
 api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/transactions"
 ---
+
+Returns the 5,000 most recent swaps for the pool, newest first, together with aggregate statistics for the last 24 hours. This endpoint has no pagination parameters; use [Pool Activity](/contracts/dex-api/pools/activity) to page through a pool's full swap history.
 
 ## Path Parameters
 
 <ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
-  Pool contract address.
+  Pool contract address (case-insensitive).
 </ParamField>
 
 ## Response Fields
 
 <ResponseField name="status" type="string">
-  Request status indicator.
+  Request status indicator: `ok` on success, `error` when the pool does not exist (HTTP 404).
 </ResponseField>
 
 <ResponseField name="transactions" type="array">
-  Array of swap transaction objects.
+  Up to 5,000 of the pool's most recent swaps, sorted by `block_number` descending.
 
   <Expandable title="Transaction object">
     <ResponseField name="pool_address" type="string">
       Address of the pool where the swap occurred.
     </ResponseField>
     <ResponseField name="first_token_address" type="string">
-      Address of the first token in the swap.
+      Address of the first token in the swap. This is not always the pool's `token0`; it changes from swap to swap together with `action`.
     </ResponseField>
     <ResponseField name="second_token_address" type="string">
       Address of the second token in the swap.
     </ResponseField>
     <ResponseField name="first_amount_token" type="number">
-      Amount of the first token swapped.
+      Amount of the first token swapped, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="second_amount_token" type="number">
-      Amount of the second token swapped.
+      Amount of the second token swapped, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="block_number" type="number">
       Block number in which the transaction was included.
@@ -53,45 +55,92 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/transactions"
     <ResponseField name="action" type="string">
       Swap direction: `Buy` or `Sell`.
     </ResponseField>
-    <ResponseField name="created_at" type="string">
-      Timestamp of the transaction.
+    <ResponseField name="created_at" type="number">
+      Time of the transaction, as a Unix timestamp (seconds).
     </ResponseField>
     <ResponseField name="pool_type" type="string">
-      Pool type: `V3_POOL` or `V2_POOL`.
+      Pool version: `v3` or `v2`. `v2` = DEX V1 (constant-product) pool; `v3` = DEX V2 (concentrated-liquidity) pool.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseField name="stats" type="object">
-  Aggregate statistics for the pool's transactions.
+  Aggregate statistics for the pool's swaps over the last 24 hours (not over the returned `transactions` array). `total_volume_usd` matches the pool's `daily_volume`.
 
   <Expandable title="Stats object">
     <ResponseField name="tx_count" type="number">
-      Total number of transactions.
+      Number of swaps in the last 24 hours.
     </ResponseField>
     <ResponseField name="buy_volume_usd" type="number">
-      Total buy volume in USD.
+      Buy volume over the last 24 hours, in USD.
     </ResponseField>
     <ResponseField name="sell_volume_usd" type="number">
-      Total sell volume in USD.
+      Sell volume over the last 24 hours, in USD.
     </ResponseField>
     <ResponseField name="total_volume_usd" type="number">
-      Combined buy and sell volume in USD.
+      Combined buy and sell volume over the last 24 hours, in USD.
     </ResponseField>
     <ResponseField name="total_buys_count" type="number">
-      Total number of buy transactions.
+      Number of buy swaps in the last 24 hours.
     </ResponseField>
     <ResponseField name="total_sells_count" type="number">
-      Total number of sell transactions.
+      Number of sell swaps in the last 24 hours.
     </ResponseField>
     <ResponseField name="buyers_count" type="number">
-      Number of unique buyer addresses.
+      Number of unique buyer addresses in the last 24 hours.
     </ResponseField>
     <ResponseField name="sellers_count" type="number">
-      Number of unique seller addresses.
+      Number of unique seller addresses in the last 24 hours.
     </ResponseField>
     <ResponseField name="makers_count" type="number">
-      Number of unique maker addresses.
+      Number of unique addresses (buyers and sellers combined) in the last 24 hours.
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "transactions": [
+    {
+      "pool_address": "0x4cea29353508b81b6efbfb8d089efe808e8fc991",
+      "first_token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+      "second_token_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_amount_token": 413.49732133599906,
+      "second_amount_token": 126.1806011069907,
+      "block_number": 244318948,
+      "tx_hash": "0xf2f4b57868f791e1ad3f93d113f93be4d4a7a68eded140ea476183580d11ec9c",
+      "from": "0x01fe004d770b24ebfe771e37090addf75183b065",
+      "total_value": 4.690616712298393,
+      "type": "Swap",
+      "action": "Sell",
+      "created_at": 1795149957,
+      "pool_type": "v3"
+    }
+  ],
+  "stats": {
+    "tx_count": 44,
+    "buy_volume_usd": 1112.5664413246218,
+    "sell_volume_usd": 133.49848148808724,
+    "total_volume_usd": 1246.064922812709,
+    "total_buys_count": 35,
+    "total_sells_count": 9,
+    "buyers_count": 3,
+    "sellers_count": 8,
+    "makers_count": 11
+  }
+}
+```
+
+```json 404 - Pool Not Found
+{
+  "status": "error",
+  "error": {
+    "code": 404,
+    "type": "pool_not_found",
+    "message": "Pool does not exist."
+  }
+}
+```
+</ResponseExample>

@@ -1,27 +1,43 @@
 ---
 title: "Pool Stats"
-description: "Historical statistics for a pool across multiple time periods"
+description: "Historical liquidity and volume snapshots for a pool over several lookback windows"
 api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/stats"
 ---
+
+Each series in `stats` is a list of snapshots taken over a lookback window, sorted oldest first. The last entry of every series is the most recent snapshot.
+
+| Series | Window |
+|--------|--------|
+| `daily` | Last 24 hours |
+| `weekly` | Last 7 days |
+| `monthly` | Last month |
+| `quarterly` | Last 3 months |
+| `all_time` | Last 12 months |
 
 ## Path Parameters
 
 <ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
-  Pool contract address.
+  Pool contract address (case-insensitive). An unknown address returns HTTP 200 with empty series and `liquidity_24h: null`, not a 404.
 </ParamField>
 
 ## Query Parameters
 
+The `weekly`, `monthly`, `quarterly`, and `all_time` parameters are approximate downsampling targets. Each one reduces its series to roughly that many points; the response can contain somewhat more or fewer points than requested. When the value is close to or above the number of stored snapshots, or when the parameter is omitted, the full series is returned. Values must be `1` or greater (`0` returns HTTP 500). The `daily` series is always returned in full.
+
 <ParamField query="weekly" type="number">
-  Number of weekly data points to return. Maximum `100`.
+  Approximate number of points for the `weekly` series.
 </ParamField>
 
 <ParamField query="monthly" type="number">
-  Number of monthly data points to return. Maximum `200`.
+  Approximate number of points for the `monthly` series.
+</ParamField>
+
+<ParamField query="quarterly" type="number">
+  Approximate number of points for the `quarterly` series.
 </ParamField>
 
 <ParamField query="all_time" type="number">
-  Number of all-time data points to return. Maximum `500`.
+  Approximate number of points for the `all_time` series.
 </ParamField>
 
 ## Response Fields
@@ -30,72 +46,140 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/stats"
   Request status indicator.
 </ResponseField>
 
+<ResponseField name="liquidity_24h" type="object | null">
+  Lowest and highest pool liquidity (USD) across the `daily` series. `null` for an unknown pool.
+
+  <Expandable title="liquidity_24h">
+    <ResponseField name="low" type="number">
+      Lowest liquidity in USD over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="high" type="number">
+      Highest liquidity in USD over the last 24 hours.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
 <ResponseField name="stats" type="object">
-  Statistics grouped by time period.
+  Snapshot series grouped by lookback window. Every series uses the same snapshot object.
 
   <Expandable title="Stats object">
     <ResponseField name="daily" type="array">
-      Array of daily stat entries.
+      Snapshots from the last 24 hours.
 
-      <Expandable title="Stat entry">
+      <Expandable title="Snapshot object">
         <ResponseField name="liquidity" type="number">
-          Pool liquidity in USD at the recorded time.
+          Pool liquidity in USD at the snapshot time.
         </ResponseField>
         <ResponseField name="daily_volume" type="number">
-          Trading volume in USD for the period.
+          Rolling 24-hour trading volume in USD at the snapshot time (not the volume of the series window).
         </ResponseField>
-        <ResponseField name="created_at" type="string">
-          Timestamp of the data point.
+        <ResponseField name="hourly_volume" type="number | null">
+          Rolling 60-minute trading volume in USD at the snapshot time. `null` in older snapshots.
+        </ResponseField>
+        <ResponseField name="hourly_fees" type="number | null">
+          Rolling 60-minute fees in USD at the snapshot time. `null` in older snapshots.
+        </ResponseField>
+        <ResponseField name="hourly_swaps_count" type="number | null">
+          Number of swaps in the 60 minutes before the snapshot. `null` in older snapshots.
+        </ResponseField>
+        <ResponseField name="created_at" type="number">
+          Snapshot time, as a Unix timestamp (seconds).
         </ResponseField>
       </Expandable>
     </ResponseField>
 
     <ResponseField name="weekly" type="array">
-      Array of weekly stat entries.
-
-      <Expandable title="Stat entry">
-        <ResponseField name="liquidity" type="number">
-          Pool liquidity in USD at the recorded time.
-        </ResponseField>
-        <ResponseField name="daily_volume" type="number">
-          Trading volume in USD for the period.
-        </ResponseField>
-        <ResponseField name="created_at" type="string">
-          Timestamp of the data point.
-        </ResponseField>
-      </Expandable>
+      Snapshots from the last 7 days. Same structure as `daily`.
     </ResponseField>
 
     <ResponseField name="monthly" type="array">
-      Array of monthly stat entries.
+      Snapshots from the last month. Same structure as `daily`.
+    </ResponseField>
 
-      <Expandable title="Stat entry">
-        <ResponseField name="liquidity" type="number">
-          Pool liquidity in USD at the recorded time.
-        </ResponseField>
-        <ResponseField name="daily_volume" type="number">
-          Trading volume in USD for the period.
-        </ResponseField>
-        <ResponseField name="created_at" type="string">
-          Timestamp of the data point.
-        </ResponseField>
-      </Expandable>
+    <ResponseField name="quarterly" type="array">
+      Snapshots from the last 3 months. Same structure as `daily`.
     </ResponseField>
 
     <ResponseField name="all_time" type="array">
-      Array of all-time stat entries.
-
-      <Expandable title="Stat entry">
-        <ResponseField name="liquidity" type="number">
-          Pool liquidity in USD at the recorded time.
-        </ResponseField>
-        <ResponseField name="daily_volume" type="number">
-          Trading volume in USD for the period.
-        </ResponseField>
-        <ResponseField name="created_at" type="string">
-          Timestamp of the data point.
-        </ResponseField>
-      </Expandable>
+      Snapshots from the last 12 months. Despite the name, older history is not included. Same structure as `daily`.
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "liquidity_24h": {
+    "low": 97308.425096742,
+    "high": 101665.21806366
+  },
+  "stats": {
+    "daily": [
+      {
+        "liquidity": 101541.70089373,
+        "daily_volume": 457.62508415058,
+        "hourly_volume": 0,
+        "hourly_fees": 0,
+        "hourly_swaps_count": 0,
+        "created_at": 1795086021
+      }
+    ],
+    "weekly": [
+      {
+        "liquidity": 110613.25431208,
+        "daily_volume": 2561.3788090062,
+        "hourly_volume": 0.0016806351166476,
+        "hourly_fees": 0.0000050419053499428,
+        "hourly_swaps_count": 1,
+        "created_at": 1794574825
+      }
+    ],
+    "monthly": [
+      {
+        "liquidity": 151881.23588267,
+        "daily_volume": 5185.5248313044,
+        "hourly_volume": 115.05752611011,
+        "hourly_fees": 0.34517257833034,
+        "hourly_swaps_count": 3,
+        "created_at": 1792496843
+      }
+    ],
+    "quarterly": [
+      {
+        "liquidity": 49537.66476972,
+        "daily_volume": 402.93604900838,
+        "hourly_volume": null,
+        "hourly_fees": null,
+        "hourly_swaps_count": null,
+        "created_at": 1787228712
+      }
+    ],
+    "all_time": [
+      {
+        "liquidity": 167913.99703717,
+        "daily_volume": 3964.0276400236,
+        "hourly_volume": null,
+        "hourly_fees": null,
+        "hourly_swaps_count": null,
+        "created_at": 1763674288
+      }
+    ]
+  }
+}
+```
+
+```json 200 - Unknown Pool
+{
+  "status": "ok",
+  "liquidity_24h": null,
+  "stats": {
+    "daily": [],
+    "weekly": [],
+    "monthly": [],
+    "quarterly": [],
+    "all_time": []
+  }
+}
+```
+</ResponseExample>

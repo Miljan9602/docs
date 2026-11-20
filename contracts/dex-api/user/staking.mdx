@@ -1,31 +1,102 @@
 ---
 title: "User Staking"
-description: "A user's staking events for a specific staking contract"
+description: "A user's staking events and reward payouts"
 api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/stakings/{staker}"
 ---
 
-### Path Parameters
+## Path Parameters
 
 <ParamField path="address" type="string" required>
-  User wallet address
+  User wallet address (case-insensitive). A wallet with no stakes (or a value that is not a valid address) returns `200` with an empty `events` array.
 </ParamField>
 
-<ParamField path="staker" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
-  Staking contract address
+<ParamField path="staker" type="string" required default="0xb71886c52d754cf2b1d3d866c7cfe9eec01418a7">
+  Staking contract address. The `{staker}` path segment is currently not used to filter results: any value returns the same events for the user.
 </ParamField>
 
-### Response
+## Response Fields
 
 <ResponseField name="status" type="string">
   `"ok"` on success
 </ResponseField>
 
 <ResponseField name="events" type="array">
-  Staking events for this user on the specified staking contract.
+  The user's stakes, each with its reward payouts.
+
+  <Expandable title="Stake event object">
+    <ResponseField name="amount" type="string">
+      Staked amount in wei, as a string.
+    </ResponseField>
+    <ResponseField name="deposited_at" type="number">
+      Deposit time, as a Unix timestamp (seconds).
+    </ResponseField>
+    <ResponseField name="transaction_hash" type="string">
+      Deposit transaction hash.
+    </ResponseField>
+    <ResponseField name="stake_index" type="number">
+      Index of this stake among the user's stakes (starting at `0`).
+    </ResponseField>
+    <ResponseField name="unlock_timestamp" type="number">
+      Unlock time, as a Unix timestamp (seconds).
+    </ResponseField>
+    <ResponseField name="stake_locked_tx_hash" type="string | null">
+      Hash of the stake-lock transaction, or `null`.
+    </ResponseField>
+    <ResponseField name="withdraw_tx_hash" type="string | null">
+      Hash of the withdrawal transaction, or `null` if the stake has not been withdrawn.
+    </ResponseField>
+    <ResponseField name="emergency_withdraw_tx_hash" type="string | null">
+      Hash of the emergency-withdrawal transaction, or `null`.
+    </ResponseField>
+    <ResponseField name="payouts" type="array">
+      Reward payouts for this stake. Keys in these objects are camelCase.
+
+      <Expandable title="Payout object">
+        <ResponseField name="amount" type="string">
+          Reward amount in the reward token's smallest unit, as a string.
+        </ResponseField>
+        <ResponseField name="blockTimestamp" type="string">
+          Payout time, as a Unix timestamp in seconds, as a string.
+        </ResponseField>
+        <ResponseField name="rewardToken" type="string">
+          Reward token address (e.g. DRG `0x0a526e425809aea71eb279d24ae22dee6c92a4fe`).
+        </ResponseField>
+        <ResponseField name="transactionHash" type="string">
+          Payout transaction hash.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseExample>
 ```json 200 - Success
+{
+  "status": "ok",
+  "events": [
+    {
+      "amount": "1500000000000000000000",
+      "deposited_at": 1755353348,
+      "transaction_hash": "0x5d2e8f1a3b4c6d7e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60",
+      "stake_index": 0,
+      "unlock_timestamp": 1755353948,
+      "stake_locked_tx_hash": null,
+      "withdraw_tx_hash": null,
+      "emergency_withdraw_tx_hash": null,
+      "payouts": [
+        {
+          "amount": "5294305659731863590",
+          "blockTimestamp": "1757533439",
+          "rewardToken": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+          "transactionHash": "0x7b3c9d0e1f2a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json 200 - No Stakes
 {
   "status": "ok",
   "events": []

@@ -4,7 +4,9 @@ description: "Aggregate statistics for the DEX"
 api: "GET https://sei-api.dragonswap.app/api/v1/stats"
 ---
 
-Returns aggregate statistics for the DragonSwap DEX, including total volume, liquidity, swap counts, user counts, 24-hour metrics, and hourly data.
+Returns aggregate statistics for the DragonSwap DEX, including total volume, liquidity, swap counts, user counts, 24-hour metrics, and hourly and daily history.
+
+Statistics are split into four buckets with the same structure: `v2` (DEX V1 constant-product pools), `v3` (DEX V2 concentrated-liquidity pools), `rfq` (RFQ trades), and `all`. Use `all` for DEX-wide totals; its volume, liquidity, swap, transaction, and fee figures are the sums of the other three buckets.
 
 This endpoint requires no parameters.
 
@@ -13,13 +15,13 @@ This endpoint requires no parameters.
 </ResponseField>
 
 <ResponseField name="stats" type="object">
-  Container for DEX statistics.
+  Container for DEX statistics, keyed by bucket.
 
   <Expandable title="stats">
     <ResponseField name="v2" type="object">
-      V2 protocol statistics.
+      Statistics for `v2` pools. `v2` = DEX V1 (constant-product) pool; `v3` = DEX V2 (concentrated-liquidity) pool.
 
-      <Expandable title="v2">
+      <Expandable title="Bucket object">
         <ResponseField name="total_volume_usd" type="number">
           Total cumulative trading volume in USD.
         </ResponseField>
@@ -30,7 +32,7 @@ This endpoint requires no parameters.
           Total number of swaps executed.
         </ResponseField>
         <ResponseField name="total_users_count" type="number">
-          Total number of unique users.
+          Total number of unique users. The same value is reported in every bucket.
         </ResponseField>
         <ResponseField name="24_hour_tx_count" type="number">
           Number of transactions in the last 24 hours.
@@ -42,11 +44,11 @@ This endpoint requires no parameters.
           Trading volume in the last 24 hours in USD.
         </ResponseField>
         <ResponseField name="hourly_data" type="array">
-          Array of hourly snapshots.
+          Hourly entries covering the last 6 months, oldest first.
 
           <Expandable title="hourly_data item">
             <ResponseField name="created_at" type="number">
-              Unix timestamp for the hourly snapshot.
+              Start of the hour, as a Unix timestamp (seconds).
             </ResponseField>
             <ResponseField name="volume_usd" type="number">
               Trading volume in USD for the hour.
@@ -65,32 +67,165 @@ This endpoint requires no parameters.
             </ResponseField>
           </Expandable>
         </ResponseField>
+        <ResponseField name="daily_data" type="array">
+          One entry per UTC day since the bucket's first recorded day, oldest first. The last entry is the current, still-incomplete day.
+
+          <Expandable title="daily_data item">
+            <ResponseField name="created_at" type="number">
+              Start of the day (00:00 UTC), as a Unix timestamp (seconds).
+            </ResponseField>
+            <ResponseField name="volume_usd" type="number">
+              Trading volume in USD for the day.
+            </ResponseField>
+            <ResponseField name="total_liquidity_usd" type="number">
+              Total liquidity in USD at the snapshot time.
+            </ResponseField>
+            <ResponseField name="inflows_usd" type="number">
+              Liquidity inflows in USD for the day.
+            </ResponseField>
+            <ResponseField name="outflows_usd" type="number">
+              Liquidity outflows in USD for the day.
+            </ResponseField>
+            <ResponseField name="fees_usd" type="number">
+              Fees collected in USD for the day.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
       </Expandable>
+    </ResponseField>
+
+    <ResponseField name="v3" type="object">
+      Statistics for `v3` pools. Same structure as `v2`.
+    </ResponseField>
+
+    <ResponseField name="rfq" type="object">
+      Statistics for RFQ trades. Same structure as `v2`. `total_liquidity_usd`, `inflows_usd`, and `outflows_usd` are `0` for this bucket.
+    </ResponseField>
+
+    <ResponseField name="all" type="object">
+      DEX-wide totals across `v2`, `v3`, and `rfq`. Same structure as `v2`.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "stats": {
     "v2": {
-      "total_volume_usd": 199150095.23766,
-      "total_liquidity_usd": 1973531.33,
-      "total_number_of_swaps": 3498778,
+      "total_volume_usd": 204445379.88303,
+      "total_liquidity_usd": 178166.04881441,
+      "total_number_of_swaps": 3720273,
       "total_users_count": 320770,
-      "24_hour_tx_count": 1956,
-      "24_hour_fees_usd": 19.557,
-      "24_hour_volume_usd": 6504.625,
+      "24_hour_tx_count": 299,
+      "24_hour_fees_usd": 1.1502554200873596,
+      "24_hour_volume_usd": 383.41847336245223,
       "hourly_data": [
         {
-          "created_at": 1757419200,
-          "volume_usd": 2596.40,
-          "total_liquidity_usd": 2104904.03,
+          "created_at": 1795168800,
+          "volume_usd": 18.704911474352382,
+          "total_liquidity_usd": 178166.04881441,
+          "inflows_usd": 0.0037171890052869736,
+          "outflows_usd": 0.0077321329669250895,
+          "fees_usd": 0.05611473442305674
+        }
+      ],
+      "daily_data": [
+        {
+          "created_at": 1795132800,
+          "volume_usd": 261.9189516320152,
+          "total_liquidity_usd": 178166.04881441,
+          "inflows_usd": 0.026894904542003148,
+          "outflows_usd": 0.13013263849936504,
+          "fees_usd": 0.7857568548960479
+        }
+      ]
+    },
+    "v3": {
+      "total_volume_usd": 6931373565.088973,
+      "total_liquidity_usd": 12607040.577358,
+      "total_number_of_swaps": 19112497,
+      "total_users_count": 320770,
+      "24_hour_tx_count": 124921,
+      "24_hour_fees_usd": 5525.0802028716125,
+      "24_hour_volume_usd": 4932315.233437918,
+      "hourly_data": [
+        {
+          "created_at": 1795168800,
+          "volume_usd": 150025.9694497783,
+          "total_liquidity_usd": 12607040.577358,
+          "inflows_usd": 981884.0199848567,
+          "outflows_usd": 981936.8210385863,
+          "fees_usd": 125.61657006813095
+        }
+      ],
+      "daily_data": [
+        {
+          "created_at": 1795132800,
+          "volume_usd": 2100154.000918814,
+          "total_liquidity_usd": 12607040.577358,
+          "inflows_usd": 12136788.85011073,
+          "outflows_usd": 12138853.75843724,
+          "fees_usd": 2363.785054523698
+        }
+      ]
+    },
+    "rfq": {
+      "total_volume_usd": 41466.87,
+      "total_liquidity_usd": 0,
+      "total_number_of_swaps": 617,
+      "total_users_count": 320770,
+      "24_hour_tx_count": 0,
+      "24_hour_fees_usd": 0,
+      "24_hour_volume_usd": 0,
+      "hourly_data": [
+        {
+          "created_at": 1795168800,
+          "volume_usd": 0,
+          "total_liquidity_usd": 0,
           "inflows_usd": 0,
           "outflows_usd": 0,
-          "fees_usd": 7.79
+          "fees_usd": 0
+        }
+      ],
+      "daily_data": [
+        {
+          "created_at": 1795132800,
+          "volume_usd": 0,
+          "total_liquidity_usd": 0,
+          "inflows_usd": 0,
+          "outflows_usd": 0,
+          "fees_usd": 0
+        }
+      ]
+    },
+    "all": {
+      "total_volume_usd": 7135860411.842,
+      "total_liquidity_usd": 12785206.626172,
+      "total_number_of_swaps": 22833387,
+      "total_users_count": 320770,
+      "24_hour_tx_count": 125220,
+      "24_hour_fees_usd": 5526.2304582917,
+      "24_hour_volume_usd": 4932698.651911283,
+      "hourly_data": [
+        {
+          "created_at": 1795168800,
+          "volume_usd": 150044.67436125,
+          "total_liquidity_usd": 12785206.626172,
+          "inflows_usd": 981884.02370205,
+          "outflows_usd": 981936.82877072,
+          "fees_usd": 125.67268480255
+        }
+      ],
+      "daily_data": [
+        {
+          "created_at": 1795132800,
+          "volume_usd": 2100415.9198704,
+          "total_liquidity_usd": 12785206.626172,
+          "inflows_usd": 12136788.877006,
+          "outflows_usd": 12138853.88857,
+          "fees_usd": 2364.5708113786
         }
       ]
     }

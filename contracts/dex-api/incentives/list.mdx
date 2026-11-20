@@ -4,7 +4,9 @@ description: "Returns all active and past incentive programs"
 api: "GET https://sei-api.dragonswap.app/api/v1/incentives"
 ---
 
-No parameters required.
+No parameters are required for this endpoint. Programs stay in the list after they end; compare `end_time` with the current time to find active ones.
+
+## Response Fields
 
 <ResponseField name="status" type="string">
   Request status indicator.
@@ -15,15 +17,15 @@ No parameters required.
 
   <Expandable title="Incentive object properties">
     <ResponseField name="start_time" type="number">
-      Unix timestamp when the incentive program starts.
+      Program start, as a Unix timestamp (seconds).
     </ResponseField>
 
     <ResponseField name="end_time" type="number">
-      Unix timestamp when the incentive program ends.
+      Program end, as a Unix timestamp (seconds).
     </ResponseField>
 
     <ResponseField name="reward" type="number">
-      Total reward amount for the incentive program.
+      Total reward amount for the program, in reward-token units (not wei).
     </ResponseField>
 
     <ResponseField name="reward_token" type="string">
@@ -43,43 +45,43 @@ No parameters required.
     </ResponseField>
 
     <ResponseField name="apr" type="string">
-      Current annual percentage rate for the incentive.
+      Annual percentage rate in percent, as a decimal string (`"123.92"` = 123.92%). Computed at request time, so it changes between requests, and it is still returned (non-zero) for programs that have ended. Check `end_time` before treating it as a live rate.
     </ResponseField>
 
-    <ResponseField name="title" type="string">
-      Human-readable name of the incentive (typically the token pair).
+    <ResponseField name="title" type="string | null">
+      Free-text display title set for the program (often a token pair such as `"WETH / USDC"`, but not derived from the pool), or `null`.
     </ResponseField>
 
     <ResponseField name="liquidity_usd" type="string">
-      Total liquidity in USD currently staked in the incentive.
+      Total liquidity in USD currently staked in the incentive, as a decimal string.
     </ResponseField>
 
-    <ResponseField name="owner" type="string">
-      Address of the incentive program owner, if applicable.
+    <ResponseField name="owner" type="string | null">
+      Address of the incentive program owner, or `null`.
     </ResponseField>
 
-    <ResponseField name="campaign" type="string">
-      Associated campaign identifier, if applicable.
+    <ResponseField name="campaign" type="string | null">
+      Associated campaign identifier, or `null`.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "incentives": [
     {
-      "start_time": 1740750000,
-      "end_time": 1743454800,
-      "reward": 317500,
+      "start_time": 1761660000,
+      "end_time": 1764079200,
+      "reward": 8000,
       "reward_token": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "refundee": "0xe0b1e2468c687ea19652d85d89a81254d657a494",
-      "pool": "0x69e2edd60bbcd42fd5ed549599de249a9a34b98b",
-      "incentive_id": "0x6a785d3a701decf7668d554ce30c55f0dbaef2ac1853e75a2044f8b70c3249fe",
-      "apr": "7627.9479464675",
-      "title": "WETH / USDC",
-      "liquidity_usd": "0",
+      "pool": "0x3a956a5d17539b1b358b0dde0765cd6f1dc9b6fd",
+      "incentive_id": "0x42df956280ef1f91b978c5677a70105e721e6422fa4c5ac7a7214764be110246",
+      "apr": "123.92132636675",
+      "title": "aUSDC / USDC",
+      "liquidity_usd": "3141.615302",
       "owner": null,
       "campaign": null
     }

@@ -7,51 +7,51 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/activity"
 ## Path Parameters
 
 <ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
-  Pool contract address.
+  Pool contract address (case-insensitive).
 </ParamField>
 
 ## Query Parameters
 
 <ParamField query="swaps_from_block" type="number" default="0">
-  Block number cursor for swap events. Pass the `block_number` from the last swap result to fetch the next page.
+  Block number cursor for swap events. Returns swaps with `block_number` greater than or equal to this value.
 </ParamField>
 
 <ParamField query="mints_from_block" type="number" default="0">
-  Block number cursor for mint (add liquidity) events. Pass the `block_number` from the last mint result to fetch the next page.
+  Block number cursor for mint (add liquidity) events. Returns mints with `block_number` greater than or equal to this value.
 </ParamField>
 
 <ParamField query="burns_from_block" type="number" default="0">
-  Block number cursor for burn (remove liquidity) events. Pass the `block_number` from the last burn result to fetch the next page.
+  Block number cursor for burn (remove liquidity) events. Returns burns with `block_number` greater than or equal to this value.
 </ParamField>
 
 <Info>
-  Results are limited to 500 per request. Use the `block_number` from the last result as the cursor for the next page.
+  Each array holds at most 500 events, sorted oldest first (`block_number` ascending). To fetch the next page, pass the `block_number` of the last event as the cursor. The cursor is inclusive, so events from that block are returned again on the next page; skip entries you already have (for example by `tx_hash`).
 </Info>
 
 ## Response Fields
 
 <ResponseField name="status" type="string">
-  Request status indicator.
+  Request status indicator: `ok` on success, `error` when the pool does not exist (HTTP 404).
 </ResponseField>
 
 <ResponseField name="swaps" type="array">
-  Array of swap activity objects.
+  Array of swap activity objects, oldest first.
 
   <Expandable title="Swap object">
     <ResponseField name="pool_address" type="string">
       Address of the pool where the swap occurred.
     </ResponseField>
     <ResponseField name="first_token_address" type="string">
-      Address of the first token in the swap.
+      Address of the first token in the swap. This is not always the pool's `token0`; it changes from swap to swap together with `action`.
     </ResponseField>
     <ResponseField name="second_token_address" type="string">
       Address of the second token in the swap.
     </ResponseField>
     <ResponseField name="first_amount_token" type="number">
-      Amount of the first token swapped.
+      Amount of the first token swapped, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="second_amount_token" type="number">
-      Amount of the second token swapped.
+      Amount of the second token swapped, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="block_number" type="number">
       Block number in which the transaction was included.
@@ -71,11 +71,57 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}/activity"
     <ResponseField name="action" type="string">
       Swap direction: `Buy` or `Sell`.
     </ResponseField>
-    <ResponseField name="created_at" type="string">
-      Timestamp of the transaction.
+    <ResponseField name="created_at" type="number">
+      Time of the transaction, as a Unix timestamp (seconds).
     </ResponseField>
     <ResponseField name="pool_type" type="string">
-      Pool type: `V3_POOL` or `V2_POOL`.
+      Pool version: `v3` or `v2`. `v2` = DEX V1 (constant-product) pool; `v3` = DEX V2 (concentrated-liquidity) pool.
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<ResponseField name="mints" type="array">
+  Array of mint (add liquidity) events selected by `mints_from_block`. Currently always returned empty.
+</ResponseField>
+
+<ResponseField name="burns" type="array">
+  Array of burn (remove liquidity) events selected by `burns_from_block`. Currently always returned empty.
+</ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "swaps": [
+    {
+      "pool_address": "0x4cea29353508b81b6efbfb8d089efe808e8fc991",
+      "first_token_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+      "second_token_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "first_amount_token": 4.0825246883041535,
+      "second_amount_token": 0.48087034012546825,
+      "block_number": 156744349,
+      "tx_hash": "0xe0644bcf4453086400dd2c4cd710afee0a9f9fc9ac09e1d243154896a097cb39",
+      "from": "0xca585e09df67e83106c9bcd839c989ace537bf95",
+      "total_value": 0.1612714282552163,
+      "type": "Swap",
+      "action": "Sell",
+      "created_at": 1752242518,
+      "pool_type": "v3"
+    }
+  ],
+  "mints": [],
+  "burns": []
+}
+```
+
+```json 404 - Pool Not Found
+{
+  "status": "error",
+  "error": {
+    "code": 404,
+    "type": "pool_not_found",
+    "message": "Pool does not exist."
+  }
+}
+```
+</ResponseExample>

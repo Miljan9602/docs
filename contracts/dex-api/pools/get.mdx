@@ -7,17 +7,17 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}"
 ## Path Parameters
 
 <ParamField path="address" type="string" required default="0x4cea29353508b81b6efbfb8d089efe808e8fc991">
-  Pool contract address.
+  Pool contract address (case-insensitive).
 </ParamField>
 
 ## Response Fields
 
 <ResponseField name="status" type="string">
-  Request status indicator.
+  Request status indicator: `ok` on success, `error` when the pool does not exist (HTTP 404).
 </ResponseField>
 
 <ResponseField name="pools" type="object">
-  Pool details object.
+  Pool details object. The key is plural (`pools`) even though it holds a single object.
 
   <Expandable title="Pool object">
     <ResponseField name="pool_address" type="string">
@@ -30,52 +30,76 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}"
       Address of the second token in the pair.
     </ResponseField>
     <ResponseField name="first_token_reserve" type="number">
-      Reserve amount of the first token.
+      Reserve of `token0`, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="second_token_reserve" type="number">
-      Reserve amount of the second token.
+      Reserve of `token1`, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="liquidity" type="number">
       Total pool liquidity in USD.
     </ResponseField>
     <ResponseField name="daily_volume" type="number">
-      24-hour trading volume in USD.
+      Trading volume over the last 24 hours, in USD.
     </ResponseField>
     <ResponseField name="daily_fees" type="number">
-      24-hour fees collected in USD.
+      Fees collected over the last 24 hours, in USD.
+    </ResponseField>
+    <ResponseField name="hourly_volume" type="number | null">
+      Trading volume over the last 60 minutes, in USD.
+    </ResponseField>
+    <ResponseField name="hourly_fees" type="number | null">
+      Fees collected over the last 60 minutes, in USD.
+    </ResponseField>
+    <ResponseField name="hourly_swaps_count" type="number | null">
+      Number of swaps over the last 60 minutes.
     </ResponseField>
     <ResponseField name="type" type="string">
-      Pool type: `V3_POOL` or `V2_POOL`.
+      Pool type: `V3_POOL` or `V2_POOL`. `V2_POOL` = DEX V1 (constant-product) pool; `V3_POOL` = DEX V2 (concentrated-liquidity) pool.
     </ResponseField>
     <ResponseField name="fee_tier" type="number">
-      Fee tier percentage for the pool.
+      Swap fee as a percentage, e.g. `0.3` = 0.3%.
     </ResponseField>
-    <ResponseField name="booster_farm_address" type="string">
+    <ResponseField name="booster_farm_address" type="string | null">
       Address of the associated booster farm, if any.
     </ResponseField>
-    <ResponseField name="incentive_id" type="string">
+    <ResponseField name="incentive_id" type="string | null">
       Associated incentive identifier, if any.
     </ResponseField>
     <ResponseField name="apy_booster" type="number">
       APY boost from the booster farm.
     </ResponseField>
     <ResponseField name="apr" type="number">
-      Annual percentage rate for the pool.
+      Annual percentage rate for the pool, in percent, based on the last 24 hours of fees (`daily_fees × 365 / liquidity × 100`).
+    </ResponseField>
+    <ResponseField name="pool_created_at" type="number">
+      Pool creation time, as a Unix timestamp (seconds).
+    </ResponseField>
+    <ResponseField name="base_apr" type="number">
+      Base APR, in percent.
+    </ResponseField>
+    <ResponseField name="boosted_apr" type="number">
+      Boosted APR, in percent.
+    </ResponseField>
+    <ResponseField name="liquidity_change_24h" type="number | null">
+      Percentage change in `liquidity` over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="volume_change_24h" type="number | null">
+      Percentage change in 24-hour trading volume compared with 24 hours earlier.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseField name="incentives" type="array">
-  Array of incentive programs associated with this pool.
+  Array of incentive programs associated with this pool, including programs that have already ended. Compare `end_time` with the current time to find active programs.
 
   <Expandable title="Incentive object">
-    <ResponseField name="start_time" type="string">
-      Incentive program start time.
+    <ResponseField name="start_time" type="number">
+      Incentive program start time, as a Unix timestamp (seconds).
     </ResponseField>
-    <ResponseField name="end_time" type="string">
-      Incentive program end time.
+    <ResponseField name="end_time" type="number">
+      Incentive program end time, as a Unix timestamp (seconds).
     </ResponseField>
-    <ResponseField name="reward" type="string">
+    <ResponseField name="reward" type="number">
       Total reward amount.
     </ResponseField>
     <ResponseField name="reward_token" type="string">
@@ -90,20 +114,64 @@ api: "GET https://sei-api.dragonswap.app/api/v1/pools/{address}"
     <ResponseField name="incentive_id" type="string">
       Unique identifier of the incentive.
     </ResponseField>
-    <ResponseField name="apr" type="number">
-      Annual percentage rate of the incentive.
+    <ResponseField name="apr" type="string">
+      Annual percentage rate of the incentive, in percent, as a numeric string.
     </ResponseField>
-    <ResponseField name="title" type="string">
+    <ResponseField name="title" type="string | null">
       Display title of the incentive program.
     </ResponseField>
-    <ResponseField name="liquidity_usd" type="number">
-      Total liquidity in USD participating in the incentive.
+    <ResponseField name="liquidity_usd" type="string">
+      Liquidity participating in the incentive, in USD, as a numeric string.
     </ResponseField>
-    <ResponseField name="owner" type="string">
+    <ResponseField name="owner" type="string | null">
       Address of the incentive creator.
     </ResponseField>
-    <ResponseField name="campaign" type="string">
+    <ResponseField name="campaign" type="string | null">
       Campaign identifier.
     </ResponseField>
   </Expandable>
 </ResponseField>
+
+<ResponseExample>
+```json 200 - Success
+{
+  "status": "ok",
+  "pools": {
+    "pool_address": "0x4cea29353508b81b6efbfb8d089efe808e8fc991",
+    "token0_address": "0x0a526e425809aea71eb279d24ae22dee6c92a4fe",
+    "token1_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+    "first_token_reserve": 4730302.7679715,
+    "second_token_reserve": 1182028.6426059,
+    "liquidity": 97930.327596668,
+    "daily_volume": 1246.0649228127,
+    "daily_fees": 3.7381947684381,
+    "hourly_volume": 0,
+    "hourly_fees": 0,
+    "hourly_swaps_count": 0,
+    "type": "V3_POOL",
+    "fee_tier": 0.3,
+    "booster_farm_address": null,
+    "incentive_id": null,
+    "apy_booster": 0,
+    "apr": 1.39328,
+    "pool_created_at": 1752239683,
+    "base_apr": 1.39328,
+    "boosted_apr": 1.39328,
+    "liquidity_change_24h": -3.7,
+    "volume_change_24h": 165.19
+  },
+  "incentives": []
+}
+```
+
+```json 404 - Pool Not Found
+{
+  "status": "error",
+  "error": {
+    "code": 404,
+    "type": "pool_not_found",
+    "message": "Pool does not exist."
+  }
+}
+```
+</ResponseExample>

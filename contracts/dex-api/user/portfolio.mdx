@@ -4,36 +4,90 @@ description: "Portfolio overview including historical value, token holdings, and
 api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/portfolio"
 ---
 
-### Path Parameters
+## Path Parameters
 
 <ParamField path="address" type="string" required>
-  User wallet address
+  User wallet address (case-insensitive). A value that is not a valid address returns HTTP `500` with an HTML error page instead of JSON.
 </ParamField>
 
-### Response
+## Response Fields
 
 <ResponseField name="status" type="string">
   `"ok"` on success
 </ResponseField>
 
 <ResponseField name="meta" type="object">
-  Metadata including `native_token_usd_price` and `change` object with `hourly`, `daily`, `weekly`, and `monthly` percentage changes.
+  Native-token market data. The same for every wallet.
+
+  <Expandable title="Meta object">
+    <ResponseField name="native_token_usd_price" type="number">
+      Current USD price of SEI.
+    </ResponseField>
+    <ResponseField name="change" type="object">
+      SEI price change in percent, with `hourly`, `daily`, `weekly`, and `monthly` keys. This is the native token's price change, not the change in the user's portfolio value.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="portfolio_history" type="array">
-  Historical snapshots of the user's portfolio. Each entry contains `timestamp` (Unix seconds), `liquidity_usd`, and `farm_balance_usd`.
+  Snapshots of the user's LP and farm value, oldest first. Snapshots are not taken at a fixed interval: a frequently tracked wallet can have entries a few hours apart, while a wallet with little history may have a single entry. The last entry is close to the time of the request.
+
+  <Expandable title="Snapshot object">
+    <ResponseField name="timestamp" type="number">
+      Snapshot time, as a Unix timestamp (seconds).
+    </ResponseField>
+    <ResponseField name="liquidity_usd" type="number">
+      USD value of the user's liquidity positions at that time.
+    </ResponseField>
+    <ResponseField name="farm_balance_usd" type="number">
+      USD value of the user's farm balances at that time.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="tokens" type="array">
-  Token holdings. Each entry includes `address`, `name`, `symbol`, `usd_price`, `decimals`, `change` object (with `hourly`, `daily`, `weekly`, `monthly`), and `user_balance`.
+  The user's token holdings (excluding native SEI, which is reported in `native_token`).
+
+  <Expandable title="Token object">
+    <ResponseField name="address" type="string">
+      Token contract address.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Full token name.
+    </ResponseField>
+    <ResponseField name="symbol" type="string">
+      Token ticker symbol.
+    </ResponseField>
+    <ResponseField name="usd_price" type="number">
+      Current USD price of the token.
+    </ResponseField>
+    <ResponseField name="decimals" type="number">
+      Number of decimals the token uses.
+    </ResponseField>
+    <ResponseField name="change" type="object">
+      Token price change in percent, with `hourly`, `daily`, `weekly`, and `monthly` keys.
+    </ResponseField>
+    <ResponseField name="user_balance" type="number">
+      The user's balance, in token units (not wei).
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="total_usd_value" type="number">
-  Total portfolio value in USD.
+  Total USD value: the token holdings in `tokens`, plus the native SEI balance, plus `liquidity_usd` from the latest `portfolio_history` entry. Farm balances (`farm_balance_usd`) are **not** included.
 </ResponseField>
 
 <ResponseField name="native_token" type="object">
-  The user's native token (SEI) holding with `balance` and `usd_price`.
+  The user's native SEI holding.
+
+  <Expandable title="Native token object">
+    <ResponseField name="balance" type="number">
+      SEI balance, in token units (not wei).
+    </ResponseField>
+    <ResponseField name="usd_price" type="number">
+      Current USD price of SEI.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseExample>
@@ -41,41 +95,46 @@ api: "GET https://sei-api.dragonswap.app/api/v1/user/{address}/portfolio"
 {
   "status": "ok",
   "meta": {
-    "native_token_usd_price": 0.0619481035298862,
+    "native_token_usd_price": 0.037520144113591135,
     "change": {
-      "hourly": 0.545686,
-      "daily": -3.327896,
-      "weekly": -8.277174,
-      "monthly": -15.176536
+      "hourly": 0,
+      "daily": -3.726197,
+      "weekly": -13.217471,
+      "monthly": -37.379287
     }
   },
   "portfolio_history": [
     {
-      "timestamp": 1773057445,
-      "liquidity_usd": 0,
-      "farm_balance_usd": 0
+      "timestamp": 1795154021,
+      "liquidity_usd": 14.32,
+      "farm_balance_usd": 3.25
+    },
+    {
+      "timestamp": 1795172021,
+      "liquidity_usd": 14.07,
+      "farm_balance_usd": 3.2
     }
   ],
   "tokens": [
     {
-      "address": "0xc257361320f4514d91c05f461006ce6a0300e2d2",
-      "name": "Splashing SEI",
-      "symbol": "spSEI",
-      "usd_price": 0.0635608432630412,
-      "decimals": 18,
+      "address": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
+      "name": "USDC",
+      "symbol": "USDC",
+      "usd_price": 1,
+      "decimals": 6,
       "change": {
-        "hourly": 0.250803,
-        "daily": -2.788041,
-        "weekly": -9.525654,
-        "monthly": -16.871257
+        "hourly": 0,
+        "daily": 0,
+        "weekly": 0,
+        "monthly": 0
       },
-      "user_balance": 0.7125725497900179
+      "user_balance": 25.5
     }
   ],
-  "total_usd_value": 291.88392573551147,
+  "total_usd_value": 44.09117736568773,
   "native_token": {
-    "balance": 0.8041098752397658,
-    "usd_price": 0.0619481035298862
+    "balance": 120.5,
+    "usd_price": 0.037520144113591135
   }
 }
 ```

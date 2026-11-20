@@ -4,16 +4,22 @@ description: "A user's staking activity including rewards, events, marketplace a
 api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/activity/{user}"
 ---
 
-<ParamField path="address" type="string" required default="0x03d9964f4d93a24b58c0fc3a8df3474b59ba8557">
-  Staking contract address
+All arrays are sorted newest first. All amounts are strings in the token's smallest unit (DRG: 18 decimals, USDC: 6 decimals) unless noted, and all timestamps are strings.
+
+## Path Parameters
+
+<ParamField path="address" type="string" required default="0xb71886c52d754cf2b1d3d866c7cfe9eec01418a7">
+  Staking contract address. Any other address returns `404` (`staker_address_not_found`).
 </ParamField>
 
 <ParamField path="user" type="string" required>
-  User wallet address
+  User wallet address (case-insensitive). A user with no staking history returns `200` with four empty arrays.
 </ParamField>
 
+## Response Fields
+
 <ResponseField name="status" type="string">
-  Response status indicator
+  `"ok"` on success, `"fail"` on error
 </ResponseField>
 
 <ResponseField name="data" type="object">
@@ -21,32 +27,226 @@ api: "GET https://sei-api.dragonswap.app/api/v1/staking/{address}/activity/{user
 
   <Expandable title="Data object properties">
     <ResponseField name="reward_activity" type="object[]">
-      Array of reward activity records
+      Reward claims and compounding
+
+      <Expandable title="Reward activity properties">
+        <ResponseField name="type" type="string">
+          `"Claim"`, `"Compound"`, `"Autocompound"`, or `"Autocompound Update"`
+        </ResponseField>
+
+        <ResponseField name="user" type="string">
+          User wallet address
+        </ResponseField>
+
+        <ResponseField name="token" type="string | null">
+          Reward token: `"1"` = DRG, `"2"` = USDC. `null` on `Autocompound Update`.
+        </ResponseField>
+
+        <ResponseField name="token_operation" type="string | null">
+          Set on `Autocompound Update` records (e.g. `"3"`); otherwise `null`
+        </ResponseField>
+
+        <ResponseField name="claimed_amount_wei" type="string | null">
+          Amount claimed, in the smallest unit of `token`. Set on `Claim` records.
+        </ResponseField>
+
+        <ResponseField name="drg_amount_wei" type="string | null">
+          DRG amount compounded. Set on `Compound` and `Autocompound` records.
+        </ResponseField>
+
+        <ResponseField name="usdc_amount_wei" type="string | null">
+          USDC amount compounded. Set on `Compound` and `Autocompound` records.
+        </ResponseField>
+
+        <ResponseField name="tx_hash" type="string">
+          Transaction hash
+        </ResponseField>
+
+        <ResponseField name="timestamp" type="string">
+          Unix timestamp in seconds, as a string
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
     <ResponseField name="staking_activity" type="object[]">
-      Array of staking event records
+      Deposits and withdrawals
+
+      <Expandable title="Staking activity properties">
+        <ResponseField name="type" type="string">
+          `"Deposit"`, `"Withdraw Start"`, or `"Instant Withdraw"`
+        </ResponseField>
+
+        <ResponseField name="user" type="string">
+          User wallet address
+        </ResponseField>
+
+        <ResponseField name="amount_wei" type="string">
+          DRG amount
+        </ResponseField>
+
+        <ResponseField name="fees" type="string | null">
+          Fee value in DRG's smallest unit. Set on `Instant Withdraw` records; otherwise `null`.
+        </ResponseField>
+
+        <ResponseField name="tx_hash" type="string">
+          Transaction hash
+        </ResponseField>
+
+        <ResponseField name="timestamp" type="string">
+          Unix timestamp in seconds, as a string
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
     <ResponseField name="marketplace_activity" type="object[]">
-      Array of marketplace action records
+      Staking-position marketplace actions
+
+      <Expandable title="Marketplace activity properties">
+        <ResponseField name="type" type="string">
+          `"Listed"`, `"Price updated"`, `"Removed"`, `"Bought"`, or `"Sold"`
+        </ResponseField>
+
+        <ResponseField name="user" type="string">
+          User wallet address
+        </ResponseField>
+
+        <ResponseField name="amount_wei" type="string | null">
+          DRG amount of the position. `null` on `Removed`.
+        </ResponseField>
+
+        <ResponseField name="price_in_USDC_wei" type="string | null">
+          Price in USDC's smallest unit (6 decimals). `null` on `Removed`.
+        </ResponseField>
+
+        <ResponseField name="bought_from" type="string | null">
+          Seller address. Set on `Bought` records.
+        </ResponseField>
+
+        <ResponseField name="sold_to" type="string | null">
+          Buyer address. Set on `Sold` records.
+        </ResponseField>
+
+        <ResponseField name="tx_hash" type="string">
+          Transaction hash
+        </ResponseField>
+
+        <ResponseField name="timestamp" type="string">
+          Unix timestamp in seconds, as a string
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
     <ResponseField name="staking_bonus" type="object[]">
-      Array of staking bonus records
+      Staking bonus payouts
+
+      <Expandable title="Staking bonus properties">
+        <ResponseField name="type" type="string">
+          `"Bonus"`
+        </ResponseField>
+
+        <ResponseField name="user" type="string">
+          User wallet address
+        </ResponseField>
+
+        <ResponseField name="token" type="string">
+          Token address of the bonus (currently the staking contract address)
+        </ResponseField>
+
+        <ResponseField name="amount" type="string">
+          Human-readable bonus amount, as a decimal string
+        </ResponseField>
+
+        <ResponseField name="amount_wei" type="string">
+          Bonus amount in the token's smallest unit (18 decimals)
+        </ResponseField>
+
+        <ResponseField name="amount_usd_value" type="string">
+          USD value of the bonus, as a decimal string
+        </ResponseField>
+
+        <ResponseField name="tx_hash" type="string">
+          Transaction hash
+        </ResponseField>
+
+        <ResponseField name="timestamp" type="string">
+          Unix timestamp in seconds, as a string
+        </ResponseField>
+      </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "data": {
-    "reward_activity": [],
-    "staking_activity": [],
-    "marketplace_activity": [],
-    "staking_bonus": []
+    "reward_activity": [
+      {
+        "type": "Claim",
+        "user": "0xc66f28e1d14539e310f3e26c6bb8cb4068801a24",
+        "token_operation": null,
+        "claimed_amount_wei": "100492966839143566572",
+        "drg_amount_wei": null,
+        "usdc_amount_wei": null,
+        "token": "1",
+        "tx_hash": "0x6e853e0dd4d427e3fee138707882c445040b811395dfacbe0cf076a44b5fddca",
+        "timestamp": "1783163270"
+      }
+    ],
+    "staking_activity": [
+      {
+        "type": "Withdraw Start",
+        "user": "0xc66f28e1d14539e310f3e26c6bb8cb4068801a24",
+        "amount_wei": "2402555524205916518357",
+        "fees": null,
+        "tx_hash": "0x6e853e0dd4d427e3fee138707882c445040b811395dfacbe0cf076a44b5fddca",
+        "timestamp": "1783163270"
+      },
+      {
+        "type": "Deposit",
+        "user": "0xc66f28e1d14539e310f3e26c6bb8cb4068801a24",
+        "amount_wei": "686444435500000000000",
+        "fees": null,
+        "tx_hash": "0x4435201a7d7c095e647a1cd54d1cff716a5aedf0f8bebe9239dac6889c527931",
+        "timestamp": "1764680683"
+      }
+    ],
+    "marketplace_activity": [
+      {
+        "type": "Listed",
+        "user": "0xc66f28e1d14539e310f3e26c6bb8cb4068801a24",
+        "amount_wei": "2402555524205916518357",
+        "price_in_USDC_wei": "36090000",
+        "sold_to": null,
+        "bought_from": null,
+        "tx_hash": "0x68ff2f2eed22356fc25569cfa8402cb169d873a187932de961a4865532053fa0",
+        "timestamp": "1774772134"
+      }
+    ],
+    "staking_bonus": [
+      {
+        "type": "Bonus",
+        "user": "0xc66f28e1d14539e310f3e26c6bb8cb4068801a24",
+        "token": "0xb71886c52d754cf2b1d3d866c7cfe9eec01418a7",
+        "amount": "686.4444355",
+        "amount_wei": "686444435500000000000",
+        "amount_usd_value": "19.318116711465",
+        "tx_hash": "0x4435201a7d7c095e647a1cd54d1cff716a5aedf0f8bebe9239dac6889c527931",
+        "timestamp": "1764700255"
+      }
+    ]
+  }
+}
+```
+
+```json 404 - Staker Address Not Found
+{
+  "status": "fail",
+  "error": {
+    "code": 404,
+    "type": "staker_address_not_found",
+    "message": "Staker address not found"
   }
 }
 ```

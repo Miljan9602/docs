@@ -32,8 +32,14 @@ api: "GET https://sei-api.dragonswap.app/api/v1/tokens"
     <ResponseField name="liquidity" type="number">
       Total liquidity in USD.
     </ResponseField>
-    <ResponseField name="description" type="string|null">
+    <ResponseField name="description" type="string | null">
       Token description, if available.
+    </ResponseField>
+    <ResponseField name="verified" type="boolean">
+      `true` if the token is on the [approved token list](/contracts/dex-api/tokens/approved).
+    </ResponseField>
+    <ResponseField name="category" type="string | null">
+      Token category. Observed values: `wrapped`, `stablecoin`, `defi`, `lst`, `meme`, `native`, `ai`.
     </ResponseField>
     <ResponseField name="change" type="object">
       Price change percentages over various timeframes.
@@ -53,11 +59,29 @@ api: "GET https://sei-api.dragonswap.app/api/v1/tokens"
         </ResponseField>
       </Expandable>
     </ResponseField>
+    <ResponseField name="liquidity_change_24h" type="number | null">
+      Percentage change in `liquidity` over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="volume_change_24h" type="number | null">
+      Percentage change in 24-hour trading volume compared with 24 hours earlier.
+    </ResponseField>
+    <ResponseField name="sparkline_7d" type="array">
+      Daily USD prices for the last 7 days (7 entries, oldest first; the last entry is the current day).
+
+      <Expandable title="Sparkline entry">
+        <ResponseField name="day" type="string">
+          Date in `YYYY-MM-DD` format.
+        </ResponseField>
+        <ResponseField name="price" type="number">
+          USD price for that day.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "tokens": [
@@ -65,16 +89,30 @@ api: "GET https://sei-api.dragonswap.app/api/v1/tokens"
       "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "name": "Wrapped SEI",
       "symbol": "WSEI",
-      "usd_price": 0.0635608432630412,
+      "usd_price": 0.03752982181635062,
       "decimals": 18,
-      "liquidity": 1511595.85,
-      "description": null,
+      "liquidity": 5398026.7529777,
+      "description": "Sei is a high-performance Layer 1 blockchain that scales the EVM with parallelized execution, enabling faster transactions, low fees, and seamless smart contract deployment.",
+      "verified": true,
+      "category": "wrapped",
       "change": {
-        "hourly": 0.250803,
-        "daily": -2.788041,
-        "weekly": -9.525654,
-        "monthly": -16.871257
-      }
+        "hourly": 0,
+        "daily": -3.726197,
+        "weekly": -13.217471,
+        "monthly": -37.379287
+      },
+      "liquidity_change_24h": -0.35,
+      "volume_change_24h": -38.48,
+      "sparkline_7d": [
+        {
+          "day": "2026-11-19",
+          "price": 0.03795186825661299
+        },
+        {
+          "day": "2026-11-20",
+          "price": 0.03737215773442027
+        }
+      ]
     }
   ]
 }

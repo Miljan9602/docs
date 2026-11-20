@@ -4,12 +4,16 @@ description: "Returns details for a specific airdrop campaign"
 api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}"
 ---
 
+## Path Parameters
+
 <ParamField path="airdrop" type="string" required default="0xe418e8f4245de5e03456b36cb8ff4158f1324f90">
-  Airdrop contract address.
+  Airdrop contract address (case-insensitive). An unknown or malformed address returns `404` with `{"status":"fail"}`.
 </ParamField>
 
+## Response Fields
+
 <ResponseField name="status" type="string">
-  Request status indicator.
+  `"ok"` on success, `"fail"` when the airdrop is not found.
 </ResponseField>
 
 <ResponseField name="airdrop" type="object">
@@ -33,7 +37,7 @@ api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}"
     </ResponseField>
 
     <ResponseField name="timestamps" type="array">
-      Array of Unix timestamps marking vesting schedule milestones.
+      Vesting schedule milestones, as Unix timestamps (seconds). One entry per vesting period; the same periods as `amounts` in [User Airdrop Allocation](/contracts/dex-api/airdrops/user).
     </ResponseField>
 
     <ResponseField name="vesting_text" type="string">
@@ -49,17 +53,17 @@ api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}"
     </ResponseField>
 
     <ResponseField name="starts_at" type="number">
-      Unix timestamp when the airdrop becomes claimable.
+      Time the airdrop becomes claimable, as a Unix timestamp (seconds).
     </ResponseField>
 
     <ResponseField name="ends_at" type="number">
-      Unix timestamp when the airdrop expires.
+      Time the airdrop expires, as a Unix timestamp (seconds).
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "airdrop": {
@@ -74,6 +78,12 @@ api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}"
     "starts_at": 1752674400,
     "ends_at": 1755352800
   }
+}
+```
+
+```json 404 - Airdrop Not Found
+{
+  "status": "fail"
 }
 ```
 </ResponseExample>

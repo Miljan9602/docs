@@ -4,13 +4,17 @@ description: "A user's airdrop eligibility and allocation amounts for a specific
 api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}/user/{user}"
 ---
 
+## Path Parameters
+
 <ParamField path="airdrop" type="string" required default="0xe418e8f4245de5e03456b36cb8ff4158f1324f90">
-  Airdrop contract address.
+  Airdrop contract address. An unknown airdrop returns `200` with `is_eligible: false` (not `404`).
 </ParamField>
 
 <ParamField path="user" type="string" required>
-  User wallet address.
+  User wallet address (case-insensitive). A wallet that is not eligible (or a value that is not a valid address) returns `200` with `is_eligible: false` and empty arrays.
 </ParamField>
+
+## Response Fields
 
 <ResponseField name="status" type="string">
   Request status indicator.
@@ -21,20 +25,29 @@ api: "GET https://sei-api.dragonswap.app/api/v1/airdrops/{airdrop}/user/{user}"
 </ResponseField>
 
 <ResponseField name="amounts" type="array">
-  Array of human-readable token amounts corresponding to each vesting period.
+  Allocation per vesting period, as human-readable decimal strings in token units. One entry per element of the airdrop's `timestamps`; empty when not eligible.
 </ResponseField>
 
 <ResponseField name="amounts_wei" type="array">
-  Array of token amounts in wei corresponding to each vesting period.
+  The same allocations in wei (the airdropped token's smallest unit), as strings. Empty when not eligible.
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Eligible
 {
   "status": "ok",
   "is_eligible": true,
   "amounts": ["123.9", "53.1"],
   "amounts_wei": ["123900000000000000000", "53100000000000000000"]
+}
+```
+
+```json 200 - Not Eligible
+{
+  "status": "ok",
+  "is_eligible": false,
+  "amounts": [],
+  "amounts_wei": []
 }
 ```
 </ResponseExample>

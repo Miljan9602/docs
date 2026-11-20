@@ -1,10 +1,12 @@
 ---
 title: "List Airdrops"
-description: "Returns all available airdrop campaigns"
+description: "Returns all airdrop campaigns, including ended ones"
 api: "GET https://sei-api.dragonswap.app/api/v1/airdrops"
 ---
 
-No parameters required.
+No parameters are required for this endpoint. Campaigns stay in the list after `ends_at`.
+
+## Response Fields
 
 <ResponseField name="status" type="string">
   Request status indicator.
@@ -31,7 +33,7 @@ No parameters required.
     </ResponseField>
 
     <ResponseField name="timestamps" type="array">
-      Array of Unix timestamps marking vesting schedule milestones.
+      Vesting schedule milestones, as Unix timestamps (seconds). One entry per vesting period; the same periods as `amounts` in [User Airdrop Allocation](/contracts/dex-api/airdrops/user).
     </ResponseField>
 
     <ResponseField name="vesting_text" type="string">
@@ -47,17 +49,17 @@ No parameters required.
     </ResponseField>
 
     <ResponseField name="starts_at" type="number">
-      Unix timestamp when the airdrop becomes claimable.
+      Time the airdrop becomes claimable, as a Unix timestamp (seconds).
     </ResponseField>
 
     <ResponseField name="ends_at" type="number">
-      Unix timestamp when the airdrop expires.
+      Time the airdrop expires, as a Unix timestamp (seconds).
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "airdrops": [

@@ -1,27 +1,50 @@
 ---
 title: "Token Stats"
-description: "Historical price, liquidity, and volume snapshots for a token"
+description: "Historical price, liquidity, and volume snapshots for a token over several lookback windows"
 api: "GET https://sei-api.dragonswap.app/api/v1/tokens/{address}/stats"
 ---
+
+Each series in `stats` is a list of snapshots taken over a lookback window, sorted oldest first. The last entry of every series is the most recent snapshot. This endpoint takes no query parameters and always returns every series in full.
+
+| Series | Window |
+|--------|--------|
+| `daily` | Last 24 hours |
+| `weekly` | Last 7 days |
+| `monthly` | Last month |
+| `quarterly` | Last 3 months |
+| `all_time` | Last 12 months |
 
 ## Path Parameters
 
 <ParamField path="address" type="string" required default="0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7">
-  Token contract address.
+  Token contract address (case-insensitive).
 </ParamField>
 
 ## Response
 
 <ResponseField name="status" type="string">
-  Request status indicator.
+  Request status indicator: `ok` on success, `fail` when the token is not found (HTTP 404).
+</ResponseField>
+
+<ResponseField name="price_24h" type="object">
+  Lowest and highest USD price across the `daily` series.
+
+  <Expandable title="price_24h">
+    <ResponseField name="low" type="number">
+      Lowest USD price over the last 24 hours.
+    </ResponseField>
+    <ResponseField name="high" type="number">
+      Highest USD price over the last 24 hours.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 <ResponseField name="stats" type="object">
-  Historical statistics grouped by timeframe.
+  Snapshot series grouped by lookback window.
 
   <Expandable title="Stats object">
     <ResponseField name="daily" type="array">
-      Daily snapshots.
+      Snapshots from the last 24 hours.
 
       <Expandable title="Snapshot object">
         <ResponseField name="usd_price" type="number">
@@ -31,44 +54,92 @@ api: "GET https://sei-api.dragonswap.app/api/v1/tokens/{address}/stats"
           Total liquidity in USD at the time of the snapshot.
         </ResponseField>
         <ResponseField name="daily_volume" type="number">
-          Trading volume in USD for the snapshot period.
+          Rolling 24-hour trading volume in USD at the time of the snapshot (not the volume of the series window).
         </ResponseField>
         <ResponseField name="created_at" type="number">
-          Unix timestamp of the snapshot.
+          Snapshot time, as a Unix timestamp (seconds).
         </ResponseField>
       </Expandable>
     </ResponseField>
 
     <ResponseField name="weekly" type="array">
-      Weekly snapshots. Same structure as daily.
+      Snapshots from the last 7 days. Same structure as `daily`.
     </ResponseField>
 
     <ResponseField name="monthly" type="array">
-      Monthly snapshots. Same structure as daily.
+      Snapshots from the last month. Same structure as `daily`.
+    </ResponseField>
+
+    <ResponseField name="quarterly" type="array">
+      Snapshots from the last 3 months. Same structure as `daily`.
     </ResponseField>
 
     <ResponseField name="all_time" type="array">
-      All-time snapshots. Same structure as daily.
+      Snapshots from the last 12 months. Despite the name, older history is not included. Same structure as `daily`.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
+  "price_24h": {
+    "low": 0.03711760879050725,
+    "high": 0.03881861598742495
+  },
   "stats": {
     "daily": [
       {
-        "usd_price": 0.35,
-        "liquidity": 1200000.0,
-        "daily_volume": 85000.0,
-        "created_at": 1709913600
+        "usd_price": 0.03881861598742495,
+        "liquidity": 5416432.6550628,
+        "daily_volume": 1004323.5756378,
+        "created_at": 1795086009
       }
     ],
-    "weekly": [],
-    "monthly": [],
-    "all_time": []
+    "weekly": [
+      {
+        "usd_price": 0.043254000664155245,
+        "liquidity": 6102724.0808836,
+        "daily_volume": 605883.60130952,
+        "created_at": 1794569441
+      }
+    ],
+    "monthly": [
+      {
+        "usd_price": 0.05968018604676202,
+        "liquidity": 7688540.3627317,
+        "daily_volume": 1561648.1368125,
+        "created_at": 1792494015
+      }
+    ],
+    "quarterly": [
+      {
+        "usd_price": 0.042096174496459915,
+        "liquidity": 6469306.168685,
+        "daily_volume": 1158350.6432081,
+        "created_at": 1787227668
+      }
+    ],
+    "all_time": [
+      {
+        "usd_price": 0.13244684956998679,
+        "liquidity": 6608852.7605904,
+        "daily_volume": 3763728.6015352,
+        "created_at": 1763795245
+      }
+    ]
+  }
+}
+```
+
+```json 404 - Token Not Found
+{
+  "status": "fail",
+  "error": {
+    "code": 404,
+    "type": "token_not_found",
+    "message": "Token not found"
   }
 }
 ```

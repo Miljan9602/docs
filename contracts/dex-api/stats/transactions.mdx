@@ -4,7 +4,7 @@ description: "Recent transactions with associated token data"
 api: "GET https://sei-api.dragonswap.app/api/v1/transactions"
 ---
 
-Returns recent transactions on the DragonSwap DEX along with metadata for all tokens involved.
+Returns the most recent swaps across all DragonSwap pools (currently 3,001 per response), newest first, along with metadata for every token involved.
 
 This endpoint requires no parameters.
 
@@ -35,23 +35,23 @@ This endpoint requires no parameters.
 </ResponseField>
 
 <ResponseField name="transactions" type="array">
-  Array of recent transaction objects.
+  Array of recent transaction objects, sorted by `block_number` descending.
 
   <Expandable title="transaction item">
     <ResponseField name="pool_address" type="string">
       Address of the liquidity pool.
     </ResponseField>
     <ResponseField name="first_token_address" type="string">
-      Contract address of the first token in the pair.
+      Contract address of the first token in the swap. This is not always the pool's `token0`; it changes from swap to swap together with `action`.
     </ResponseField>
     <ResponseField name="second_token_address" type="string">
-      Contract address of the second token in the pair.
+      Contract address of the second token in the swap.
     </ResponseField>
     <ResponseField name="first_amount_token" type="number">
-      Amount of the first token involved in the transaction.
+      Amount of the first token involved in the transaction, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="second_amount_token" type="number">
-      Amount of the second token involved in the transaction.
+      Amount of the second token involved in the transaction, in whole token units (decimal-adjusted, not wei).
     </ResponseField>
     <ResponseField name="block_number" type="number">
       Block number in which the transaction was included.
@@ -66,47 +66,54 @@ This endpoint requires no parameters.
       Total value of the transaction in USD.
     </ResponseField>
     <ResponseField name="type" type="string">
-      Transaction type (e.g., `Swap`).
+      Transaction type: `Swap`.
     </ResponseField>
     <ResponseField name="action" type="string">
       Transaction action — `Buy` or `Sell`.
     </ResponseField>
     <ResponseField name="created_at" type="number">
-      Unix timestamp of the transaction.
+      Time of the transaction, as a Unix timestamp (seconds).
     </ResponseField>
     <ResponseField name="pool_type" type="string">
-      Pool version — `v2` or `v3`.
+      Pool version — `v2` or `v3`. `v2` = DEX V1 (constant-product) pool; `v3` = DEX V2 (concentrated-liquidity) pool.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200 - Success
 {
   "status": "ok",
   "tokens": [
     {
+      "address": "0x9151434b16b9763660705744891fa906f660ecc5",
+      "name": "USD₮0",
+      "symbol": "USD₮0",
+      "usd_price": 0.9988252136945237,
+      "decimals": 6
+    },
+    {
       "address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
       "name": "Wrapped SEI",
       "symbol": "WSEI",
-      "usd_price": 0.0635608432630412,
+      "usd_price": 0.03752982181635062,
       "decimals": 18
     }
   ],
   "transactions": [
     {
-      "pool_address": "0x1e7ade0350e9435cedf0a9a87a8983bbbacabf2a",
-      "first_token_address": "0xe15fc38f6d8c56af07bbcbe3baf5708a2bf42392",
-      "second_token_address": "0x160345fc359604fc6e70e3c5facbde5f7a9342d8",
-      "first_amount_token": 51.767493,
-      "second_amount_token": 0.026035,
-      "block_number": 197278168,
-      "tx_hash": "0x87bf92c8347f825ae6e20a7cb5a4e99113bc9bfc1425d29bb694578f256dc878",
-      "from": "0x4cd934beae89200b3e5f16783897c9424e25f3df",
-      "total_value": 51.73,
+      "pool_address": "0xb243320bcf9c95db7f74108b6773b8f4dc3adaf5",
+      "first_token_address": "0xe30fedd158a2e3b13e9badaeabafc5516e95e8c7",
+      "second_token_address": "0x9151434b16b9763660705744891fa906f660ecc5",
+      "first_amount_token": 184.85832441723164,
+      "second_amount_token": 6.925484,
+      "block_number": 244365896,
+      "tx_hash": "0x1bbecbad4f79760d730f3195766bb6c69398073c650a165ae132c0755a874e36",
+      "from": "0x0d0fbf5340457b2b915ece0eee58d9def98ea8dc",
+      "total_value": 6.917348036238,
       "type": "Swap",
-      "action": "Buy",
-      "created_at": 1773056249,
+      "action": "Sell",
+      "created_at": 1795171953,
       "pool_type": "v3"
     }
   ]
