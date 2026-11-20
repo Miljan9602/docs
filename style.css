@@ -1,0 +1,42 @@
+:root {
+  --saphyre-blue: #155dfc;
+  --saphyre-blue-hover: #1447e6;
+  --saphyre-blue-soft: #60a5fa;
+}
+
+.method-pill,
+.method-nav-pill > span {
+  background-color: rgb(21 93 252 / 0.12) !important;
+  color: var(--saphyre-blue) !important;
+}
+
+.dark .method-pill,
+.dark .method-nav-pill > span {
+  background-color: rgb(21 93 252 / 0.2) !important;
+  color: var(--saphyre-blue-soft) !important;
+}
+
+a[aria-current="page"] .method-nav-pill > span {
+  background-color: var(--saphyre-blue) !important;
+  color: #ffffff !important;
+}
+
+.method-pill ~ div [class*="border-2"] {
+  background-color: rgb(21 93 252 / 0.1) !important;
+  border-color: rgb(21 93 252 / 0.3) !important;
+  color: var(--saphyre-blue) !important;
+}
+
+.dark .method-pill ~ div [class*="border-2"] {
+  color: var(--saphyre-blue-soft) !important;
+}
+
+.tryit-button {
+  background-color: var(--saphyre-blue) !important;
+  color: #ffffff !important;
+}
+
+.tryit-button:hover {
+  background-color: var(--saphyre-blue-hover) !important;
+  opacity: 1 !important;
+}

@@ -33,6 +33,7 @@ The `objc ... GNotificationCenterDelegate` warning from sharp on macOS is noise;
   - DEX pages (`contracts/dex-api/`) use absolute `https://sei-api.dragonswap.app/...` URLs. One endpoint per page.
 - `api-reference/openapi.yaml` is not wired into `docs.json` and does not cover all endpoints (e.g. no analytics). Don't treat it as authoritative.
 - Branding mirrors saphyre.xyz's CSS tokens: brand `#155DFC`, dark background `#0A0A0A`, links `#60A5FA`, font Supreme. Fonts are self-hosted in `fonts/` as woff2 because Mintlify only accepts woff/woff2 (the site ships TTF). `images/logo-dark.svg` (white wordmark) is the dark-mode logo; `logo-light.svg` is the same mark with dark text.
+- `style.css` (auto-loaded by Mintlify) recolors HTTP method badges, path-param pills and the "Try it" button to brand blue for every method; it relies on Mintlify's `method-pill`, `method-nav-pill` and `tryit-button` hooks.
 - `concepts/` holds protocol-level explanations (architecture, EIP-712 signing, Permit2, fees, TTLs, error codes) shared by both RFQ integration tabs.
 
 ## AI skill pages (keep in sync)
